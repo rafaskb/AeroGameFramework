@@ -29,8 +29,10 @@ def get_all_files():
 		if (len(files) == 0 and subdir != rootdir and len(dirs) == 0):
 			data["paths"].append(fix_path(rootdir) + "/" + emptyDirSuffix)
 		for file in files:
-			path = fix_path(os.path.join(subdir, file))
-			data["paths"].append(path)
+			if not file.startswith("."):
+				path = fix_path(os.path.join(subdir, file))
+				data["paths"].append(path)
+				print(path)
 
 
 def write_to_filelist_file():
