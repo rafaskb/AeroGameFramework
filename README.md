@@ -1,3 +1,11 @@
+# About this fork
+Aero is a powerful framework, but I thought it could use some changes beyond the official scope to fit my needs, such as recursive loading of modules and a script directory to hold common scripts that are not services.
+
+#### Installing this fork
+```lua
+require(2366776232)()
+```
+
 # AeroGameFramework
 A powerful game framework for the Roblox platform.
 
@@ -7,31 +15,30 @@ AeroGameFramework is a Roblox game framework that makes development easy and fun
 Learn how to use the framework in the video tutorial series:
 https://www.youtube.com/watch?v=0oOFgZJPIcY&list=PLk3R4TM3pnqv7doCTUHtn-wkydaA08npc
 
-# Install & Update
-Run the following code snippet in the Command Line within Roblox Studio to install or update the framework:
-```lua
-require(932606289)()
-```
-
-**Note:** Always be careful when executing code unfamiliar to you. Before running the code snippet above, feel free to inspect the [module that is being executed](https://www.roblox.com/library/932606289/AeroGameFramework-Installer), and inspect the `install.lua` file in the repository.
-
 # Structure
 AeroGameFramework is structured into three categories: Server, Client, and Shared.
 
 - `[Server] ServerStorage.Aero.Services`
 - `[Server] ServerStorage.Aero.Modules`
+- `[Server] ServerStorage.Aero.Scripts`
 - `[Client] StarterPlayerScripts.Aero.Controllers`
 - `[Client] StarterPlayerScripts.Aero.Modules`
+- `[Client] StarterPlayerScripts.Aero.Scripts`
 - `[Shared] ReplicatedStorage.Aero.Shared`
 
 ## Server
-`ServerStorage.Aero.Services` & `ServerStorage.Aero.Modules`
+- `ServerStorage.Aero.Services`
+- `ServerStorage.Aero.Modules`
+- `ServerStorage.Aero.Scripts`
 
 #### Services
 Services are modules that are initialized and run at runtime. All services are exposed to each other. Services can also expose functions and events to the client.
 
 #### Modules
 Modules are lazy-loaded modules that services can access as needed.
+
+#### Scripts
+`TODO`
 
 ## Client
 `StarterPlayerScripts.Aero.Controllers` & `StarterPlayerScripts.Aero.Modules`
@@ -41,6 +48,9 @@ Client controllers work similarly to server-side services, whereas all the modul
 
 #### Modules
 Client-side modules have the exact functionality as server-side modules, except that they are run on the client.
+
+#### Scripts
+`TODO`
 
 ## Shared
 `ReplicatedStorage.Aero.Shared`
