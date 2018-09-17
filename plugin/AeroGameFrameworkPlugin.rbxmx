@@ -1255,7 +1255,7 @@ return __MODULENAME]]></ProtectedString>
 local UpdateChecker = {}
 
 
-local VERSION_URL = "https://raw.githubusercontent.com/Sleitnick/AeroGameFramework/master/version.txt"
+local VERSION_URL = "https://raw.githubusercontent.com/RafaSKB/AeroGameFramework/master/version.txt"
 
 local Version = require(script:WaitForChild("Version"))
 

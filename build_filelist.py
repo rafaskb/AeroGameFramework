@@ -10,7 +10,7 @@ import json
 
 filelistName = "filelist.json"
 
-prefix = "https://raw.githubusercontent.com/Sleitnick/AeroGameFramework/master/src/"
+prefix = "https://raw.githubusercontent.com/RafaSKB/AeroGameFramework/master/src/"
 emptyDirSuffix = "EMPTY"
 
 rootdir = os.path.join(".", "src")

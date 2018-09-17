@@ -4,8 +4,8 @@
 
 
 
-local FILELIST_URL = "https://raw.githubusercontent.com/Sleitnick/AeroGameFramework/master/filelist.json"
-local VERSION_URL = "https://raw.githubusercontent.com/Sleitnick/AeroGameFramework/master/version.txt"
+local FILELIST_URL = "https://raw.githubusercontent.com/RafaSKB/AeroGameFramework/master/filelist.json"
+local VERSION_URL = "https://raw.githubusercontent.com/RafaSKB/AeroGameFramework/master/version.txt"
 local VERSION_OBJ_NAME = "__version__"
 
 if (_G._INSTALLING_AEROGAMEFRAMEWORK_) then
