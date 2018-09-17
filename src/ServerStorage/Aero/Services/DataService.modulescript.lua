@@ -293,8 +293,12 @@ function DataService:Start()
 	
 	game:GetService("Players").PlayerRemoving:Connect(PlayerRemoving)
 	
-	game:BindToClose(GameClosing)
-	
+	if game:GetService("RunService"):IsStudio() then
+		warn("[DataService] Not saving data due to a Studio bug freezing the main thread when yield functions are called on BindToClose. For more information search for the error \"Not running script because past shutdown deadline\". This should be fixed by Studio by September 20, 2018.")
+	else
+		game:BindToClose(GameClosing)
+	end
+
 	delay(AUTOSAVE_INTERVAL, function()
 		self:AutoSaveLoop()
 	end)
