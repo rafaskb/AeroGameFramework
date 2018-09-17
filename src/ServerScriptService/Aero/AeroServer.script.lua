@@ -7,6 +7,7 @@
 local AeroServer = {
 	Services = {};
 	Modules  = {};
+	Scripts  = {};
 	Shared   = {};
 }
 
@@ -14,6 +15,7 @@ local mt = {__index = AeroServer}
 
 local servicesFolder = game:GetService("ServerStorage"):WaitForChild("Aero"):WaitForChild("Services")
 local modulesFolder = game:GetService("ServerStorage"):WaitForChild("Aero"):WaitForChild("Modules")
+local scriptsFolder = game:GetService("ServerStorage"):WaitForChild("Aero"):WaitForChild("Scripts")
 local sharedFolder = game:GetService("ReplicatedStorage"):WaitForChild("Aero"):WaitForChild("Shared")
 
 local remoteServices = Instance.new("Folder")
@@ -161,29 +163,88 @@ function StartService(service)
 end
 
 
+-- Load script from module:
+function LoadScript(module)
+
+	local serverScript = require(module)
+	AeroServer.Scripts[module.Name] = serverScript
+
+	setmetatable(serverScript, mt)
+
+end
+
+
+function InitScript(serverScript)
+
+	-- Initialize:
+	if (type(serverScript.Init) == "function") then
+        serverScript:Init()
+	end
+
+end
+
+
+function StartScript(serverScript)
+
+	-- Start scripts on separate threads:
+	if (type(serverScript.Start) == "function") then
+		coroutine.wrap(serverScript.Start)(serverScript)
+	end
+
+end
+
+
+local function InitServices()
+    -- Load service modules:
+    for _,module in pairs(servicesFolder:GetChildren()) do
+        if (module:IsA("ModuleScript")) then
+            LoadService(module)
+        end
+    end
+
+    -- Initialize services:
+    for _,service in pairs(AeroServer.Services) do
+        InitService(service)
+    end
+
+    -- Start services:
+    for _,service in pairs(AeroServer.Services) do
+        StartService(service)
+    end
+end
+
+
+local function InitScripts()
+    -- Load script modules:
+    for _,module in pairs(scriptsFolder:GetDescendants()) do
+        if (module:IsA("ModuleScript")) then
+            LoadScript(module)
+        end
+    end
+
+    -- Initialize scripts:
+    for _,serverScript in pairs(AeroServer.Scripts) do
+        InitScript(serverScript)
+    end
+
+    -- Start scripts:
+    for _,serverScript in pairs(AeroServer.Scripts) do
+        StartScript(serverScript)
+    end
+end
+
+
 function Init()
 	
 	-- Lazy-load server and shared modules:
 	LazyLoadSetup(AeroServer.Modules, modulesFolder)
 	LazyLoadSetup(AeroServer.Shared, sharedFolder)
-	
-	-- Load service modules:
-	for _,module in pairs(servicesFolder:GetChildren()) do
-		if (module:IsA("ModuleScript")) then
-			LoadService(module)
-		end
-	end
-	
-	-- Initialize services:
-	for _,service in pairs(AeroServer.Services) do
-		InitService(service)
-	end
-	
-	-- Start services:
-	for _,service in pairs(AeroServer.Services) do
-		StartService(service)
-	end
-	
+	LazyLoadSetup(AeroServer.Scripts, scriptsFolder)
+
+    -- Init services and scripts
+    InitServices()
+    InitScripts()
+
 	-- Expose server framework to client and global scope:
 	remoteServices.Parent = game:GetService("ReplicatedStorage").Aero
 	_G.AeroServer = AeroServer

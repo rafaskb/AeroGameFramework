@@ -7,6 +7,7 @@
 local Aero = {
 	Controllers = {};
 	Modules     = {};
+	Scripts     = {};
 	Shared      = {};
 	Services    = {};
 	Player      = game:GetService("Players").LocalPlayer;
@@ -16,6 +17,7 @@ local mt = {__index = Aero}
 
 local controllersFolder = script.Parent:WaitForChild("Controllers")
 local modulesFolder = script.Parent:WaitForChild("Modules")
+local scriptsFolder = script.Parent:WaitForChild("Scripts")
 local sharedFolder = game:GetService("ReplicatedStorage"):WaitForChild("Aero"):WaitForChild("Shared")
 
 
@@ -126,16 +128,32 @@ function StartController(controller)
 
 end
 
+function LoadScript(module)
+	local clientScript = require(module)
+	Aero.Scripts[module.Name] = clientScript
+	setmetatable(clientScript, mt)
+end
 
-function Init()
-	
-	-- Lazy load modules:
-	LazyLoadSetup(Aero.Modules, modulesFolder)
-	LazyLoadSetup(Aero.Shared, sharedFolder)
-	
-	-- Load server-side services:
-	LoadServices()
-	
+
+function InitScript(clientScript)
+	if (type(clientScript.Init) == "function") then
+		clientScript:Init()
+	end
+end
+
+
+function StartScript(clientScript)
+
+	-- Start scripts on separate threads:
+	if (type(clientScript.Start) == "function") then
+		coroutine.wrap(clientScript.Start)(clientScript)
+	end
+
+end
+
+
+local function InitControllers()
+
 	-- Load controllers:
 	for _,module in pairs(controllersFolder:GetChildren()) do
 		if (module:IsA("ModuleScript")) then
@@ -152,6 +170,44 @@ function Init()
 	for _,controller in pairs(Aero.Controllers) do
 		StartController(controller)
 	end
+
+end
+
+
+local function InitScripts()
+
+	-- Load scripts:
+	for _,module in pairs(scriptsFolder:GetDescendants()) do
+		if (module:IsA("ModuleScript")) then
+			LoadScript(module)
+		end
+	end
+
+	-- Initialize scripts:
+	for _,clientScript in pairs(Aero.Scripts) do
+		InitScript(clientScript)
+	end
+
+	-- Start scripts:
+	for _,clientScript in pairs(Aero.Scripts) do
+		StartScript(clientScript)
+	end
+
+end
+
+
+function Init()
+	
+	-- Lazy load modules:
+	LazyLoadSetup(Aero.Modules, modulesFolder)
+	LazyLoadSetup(Aero.Shared, sharedFolder)
+	
+	-- Load server-side services:
+	LoadServices()
+
+	-- Init controllers and scripts
+	InitControllers()
+	InitScripts()
 
 	-- Expose client framework globally:
 	_G.Aero = Aero
