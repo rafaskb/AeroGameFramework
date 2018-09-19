@@ -201,7 +201,8 @@ function Init()
 	-- Lazy load modules:
 	LazyLoadSetup(Aero.Modules, modulesFolder)
 	LazyLoadSetup(Aero.Shared, sharedFolder)
-	
+	LazyLoadSetup(Aero.Scripts, scriptsFolder)
+
 	-- Load server-side services:
 	LoadServices()
 
