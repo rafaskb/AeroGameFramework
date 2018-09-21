@@ -5,13 +5,13 @@
 
 
 local AeroServer = {
-	Services = {};
-	Modules  = {};
-	Scripts  = {};
-	Shared   = {};
+    Services = {};
+    Modules = {};
+    Scripts = {};
+    Shared = {};
 }
 
-local mt = {__index = AeroServer}
+local mt = { __index = AeroServer }
 
 local servicesFolder = game:GetService("ServerStorage"):WaitForChild("Aero"):WaitForChild("Services")
 local modulesFolder = game:GetService("ServerStorage"):WaitForChild("Aero"):WaitForChild("Modules")
@@ -21,94 +21,83 @@ local sharedFolder = game:GetService("ReplicatedStorage"):WaitForChild("Aero"):W
 local remoteServices = Instance.new("Folder")
 remoteServices.Name = "AeroRemoteServices"
 
-
 function AeroServer:RegisterEvent(eventName)
-	local event = self.Shared.Event.new()
-	self._events[eventName] = event
-	return event
+    local event = self.Shared.Event.new()
+    self._events[eventName] = event
+    return event
 end
-
 
 function AeroServer:RegisterClientEvent(eventName)
-	local event = Instance.new("RemoteEvent")
-	event.Name = eventName
-	event.Parent = self._remoteFolder
-	self._clientEvents[eventName] = event
-	return event
+    local event = Instance.new("RemoteEvent")
+    event.Name = eventName
+    event.Parent = self._remoteFolder
+    self._clientEvents[eventName] = event
+    return event
 end
-
 
 function AeroServer:FireEvent(eventName, ...)
-	self._events[eventName]:Fire(...)
+    self._events[eventName]:Fire(...)
 end
-
 
 function AeroServer:FireClientEvent(eventName, client, ...)
-	self._clientEvents[eventName]:FireClient(client, ...)
+    self._clientEvents[eventName]:FireClient(client, ...)
 end
-
 
 function AeroServer:FireAllClientsEvent(eventName, ...)
-	self._clientEvents[eventName]:FireAllClients(...)
+    self._clientEvents[eventName]:FireAllClients(...)
 end
-
 
 function AeroServer:ConnectEvent(eventName, func)
-	return self._events[eventName]:Connect(func)
+    return self._events[eventName]:Connect(func)
 end
-
 
 function AeroServer:ConnectClientEvent(eventName, func)
-	return self._clientEvents[eventName].OnServerEvent:Connect(func)
+    return self._clientEvents[eventName].OnServerEvent:Connect(func)
 end
-
 
 function AeroServer:WaitForEvent(eventName)
-	return self._events[eventName]:Wait()
+    return self._events[eventName]:Wait()
 end
-
 
 function AeroServer:WaitForClientEvent(eventName)
-	return self._clientEvents[eventName]:Wait()
+    return self._clientEvents[eventName]:Wait()
 end
-
 
 function AeroServer:RegisterClientFunction(funcName, func)
-	local remoteFunc = Instance.new("RemoteFunction")
-	remoteFunc.Name = funcName
-	remoteFunc.OnServerInvoke = function(...)
-		return func(self.Client, ...)
-	end
-	remoteFunc.Parent = self._remoteFolder
-	return remoteFunc
+    local remoteFunc = Instance.new("RemoteFunction")
+    remoteFunc.Name = funcName
+    remoteFunc.OnServerInvoke = function(...)
+        return func(self.Client, ...)
+    end
+    remoteFunc.Parent = self._remoteFolder
+    return remoteFunc
 end
 
-
 function AeroServer:WrapModule(tbl)
-	assert(type(tbl) == "table", "Expected table for argument")
-	tbl._events = {}
-	setmetatable(tbl, mt)
-	if (type(tbl.Init) == "function") then
-		tbl:Init()
-	end
-	if (type(tbl.Start) == "function") then
-		coroutine.wrap(tbl.Start)(tbl)
-	end
+    assert(type(tbl) == "table", "Expected table for argument")
+    tbl._events = {}
+    setmetatable(tbl, mt)
+    if (type(tbl.Init) == "function") then
+        tbl:Init()
+    end
+    if (type(tbl.Start) == "function") then
+        coroutine.wrap(tbl.Start)(tbl)
+    end
 end
 
 
 -- Setup table to load modules on demand:
 function LazyLoadSetup(tbl, folder)
-	setmetatable(tbl, {
-		__index = function(t, i)
-			local obj = require(folder[i])
-			if (type(obj) == "table") then
-				AeroServer:WrapModule(obj)
-			end
-			rawset(t, i, obj)
-			return obj
-		end;
-	})
+    setmetatable(tbl, {
+        __index = function(t, i)
+            local obj = require(folder[i])
+            if (type(obj) == "table") then
+                AeroServer:WrapModule(obj)
+            end
+            rawset(t, i, obj)
+            return obj
+        end;
+    })
 end
 
 
@@ -233,23 +222,21 @@ local function InitScripts()
     end
 end
 
-
 function Init()
-	
-	-- Lazy-load server and shared modules:
-	LazyLoadSetup(AeroServer.Modules, modulesFolder)
-	LazyLoadSetup(AeroServer.Shared, sharedFolder)
-	LazyLoadSetup(AeroServer.Scripts, scriptsFolder)
+
+    -- Lazy-load server and shared modules:
+    LazyLoadSetup(AeroServer.Modules, modulesFolder)
+    LazyLoadSetup(AeroServer.Shared, sharedFolder)
+    LazyLoadSetup(AeroServer.Scripts, scriptsFolder)
 
     -- Init services and scripts
     InitServices()
     InitScripts()
 
-	-- Expose server framework to client and global scope:
-	remoteServices.Parent = game:GetService("ReplicatedStorage").Aero
-	_G.AeroServer = AeroServer
-	
-end
+    -- Expose server framework to client and global scope:
+    remoteServices.Parent = game:GetService("ReplicatedStorage").Aero
+    _G.AeroServer = AeroServer
 
+end
 
 Init()
