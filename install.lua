@@ -242,7 +242,7 @@ function Install()
 				versionObj.Parent = aero
 			end
 			versionObj.Value = version
-			Print("Installed Aero v" .. version)
+			Print("Aero " .. version .. " is up to date.")
 		end
 	end
 
