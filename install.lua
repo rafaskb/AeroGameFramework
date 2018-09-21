@@ -227,6 +227,10 @@ function Install()
 	local numPaths = 1
 	local version
 
+	local function Print(msg)
+		print("[AeroGameFramework]", msg)
+	end
+
 	-- Update local version in-game:
 	local function UpdateVersion()
 		local aero = game:GetService("ServerStorage"):FindFirstChild("Aero")
@@ -238,6 +242,7 @@ function Install()
 				versionObj.Parent = aero
 			end
 			versionObj.Value = version
+			Print("Installed Aero v" .. version)
 		end
 	end
 
@@ -251,6 +256,7 @@ function Install()
 
 	-- Main installation process:
 	local success, err = pcall(function()
+        Print("Installing Aero...")
 
 		version = http:GetAsync(VERSION_URL, true)
 
@@ -292,8 +298,11 @@ function Install()
 				end
 			end
 			UpdateUI(i, printPrefix .. " " .. (scriptObj or parent).Name)
-		end
+			if printPrefix ~= "[EXISTED]" then
+				Print(printPrefix .. " " .. (scriptObj or parent).Name)
+			end
 
+        end
 	end)
 
 	if (success) then
