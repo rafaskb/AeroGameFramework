@@ -56,6 +56,31 @@ function Aero:WrapModule(tbl)
 end
 
 
+function RunSafe(name, f)
+	-- Run function
+	local status, err = xpcall(f, debug.traceback)
+	if not status then
+
+		-- Print error
+		local firstLine = true
+		local msg = " --- CLIENT ERROR ---"
+		for s in err:gmatch("[^\r\n]+") do
+			local isAero = s:find("AeroClient")
+			local isStack = s == "Stack Begin" or s == "Stack End"
+			if not isAero and not isStack then
+				if firstLine then
+					msg = msg .. "\nUnhandled error in " .. name .. ": " .. s .. "\nSTACK TRACE:\n"
+					firstLine = false
+				else
+					msg = msg .. "        at " .. s .. "\n"
+				end
+			end
+		end
+		warn(msg)
+	end
+end
+
+
 function LoadService(serviceFolder)
 	local service = {}
 	Aero.Services[serviceFolder.Name] = service
@@ -112,18 +137,22 @@ function LoadController(module)
 end
 
 
-function InitController(controller)
+function InitController(controller, name)
 	if (type(controller.Init) == "function") then
-		controller:Init()
+		RunSafe(name, function()
+			controller:Init()
+		end)
 	end
 end
 
 
-function StartController(controller)
+function StartController(controller, name)
 
 	-- Start controllers on separate threads:
 	if (type(controller.Start) == "function") then
-		coroutine.wrap(controller.Start)(controller)
+		RunSafe(name, function()
+			controller:Start()
+		end)
 	end
 
 end
@@ -135,18 +164,22 @@ function LoadScript(module)
 end
 
 
-function InitScript(clientScript)
+function InitScript(clientScript, name)
 	if (type(clientScript.Init) == "function") then
-		clientScript:Init()
+		RunSafe(name, function()
+			clientScript:Init()
+		end)
 	end
 end
 
 
-function StartScript(clientScript)
+function StartScript(clientScript, name)
 
 	-- Start scripts on separate threads:
 	if (type(clientScript.Start) == "function") then
-		coroutine.wrap(clientScript.Start)(clientScript)
+		RunSafe(name, function()
+			clientScript:Start()
+		end)
 	end
 
 end
@@ -162,13 +195,13 @@ local function InitControllers()
 	end
 	
 	-- Initialize controllers:
-	for _,controller in pairs(Aero.Controllers) do
-		InitController(controller)
+	for name,controller in pairs(Aero.Controllers) do
+		InitController(controller, name)
 	end
 	
 	-- Start controllers:
-	for _,controller in pairs(Aero.Controllers) do
-		StartController(controller)
+	for name,controller in pairs(Aero.Controllers) do
+		StartController(controller, name)
 	end
 
 end
@@ -184,13 +217,13 @@ local function InitScripts()
 	end
 
 	-- Initialize scripts:
-	for _,clientScript in pairs(Aero.Scripts) do
-		InitScript(clientScript)
+	for name,clientScript in pairs(Aero.Scripts) do
+		InitScript(clientScript, name)
 	end
 
 	-- Start scripts:
-	for _,clientScript in pairs(Aero.Scripts) do
-		StartScript(clientScript)
+	for name,clientScript in pairs(Aero.Scripts) do
+		StartScript(clientScript, name)
 	end
 
 end

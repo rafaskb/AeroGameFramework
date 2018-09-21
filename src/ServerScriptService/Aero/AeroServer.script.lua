@@ -85,6 +85,29 @@ function AeroServer:WrapModule(tbl)
     end
 end
 
+function RunSafe(name, f)
+    -- Run function
+    local status, err = xpcall(f, debug.traceback)
+    if not status then
+
+        -- Print error
+        local firstLine = true
+        local msg = " --- SERVER ERROR ---"
+        for s in err:gmatch("[^\r\n]+") do
+            local isAero = s:find("AeroServer")
+            local isStack = s == "Stack Begin" or s == "Stack End"
+            if not isAero and not isStack then
+                if firstLine then
+                    msg = msg .. "\nUnhandled error in " .. name .. ": " .. s .. "\nSTACK TRACE:\n"
+                    firstLine = false
+                else
+                    msg = msg .. "        at " .. s .. "\n"
+                end
+            end
+        end
+        warn(msg)
+    end
+end
 
 -- Setup table to load modules on demand:
 function LazyLoadSetup(tbl, folder)
@@ -125,30 +148,33 @@ function LoadService(module)
 end
 
 
-function InitService(service)
-	
-	-- Initialize:
-	if (type(service.Init) == "function") then
-		service:Init()
-	end
-	
-	-- Client functions:
-	for funcName,func in pairs(service.Client) do
-		if (type(func) == "function") then
-			service:RegisterClientFunction(funcName, func)
-		end
-	end
-	
 end
 
+function InitService(service, name)
 
-function StartService(service)
+    -- Initialize:
+    if (type(service.Init) == "function") then
+        RunSafe(name, function()
+            service:Init()
+        end)
+    end
 
-	-- Start services on separate threads:
-	if (type(service.Start) == "function") then
-		coroutine.wrap(service.Start)(service)
-	end
+    -- Client functions:
+    for funcName, func in pairs(service.Client) do
+        if (type(func) == "function") then
+            RunSafe(name, function()
+                service:RegisterClientFunction(funcName, func)
+            end)
+        end
+    end
 
+
+function StartService(service, name)
+    if (type(service.Start) == "function") then
+        RunSafe(name, function()
+            service:Start()
+        end)
+    end
 end
 
 
@@ -162,63 +188,63 @@ function LoadScript(module)
 
 end
 
+function InitScript(serverScript, name)
 
-function InitScript(serverScript)
-
-	-- Initialize:
-	if (type(serverScript.Init) == "function") then
-        serverScript:Init()
-	end
-
-end
-
-
-function StartScript(serverScript)
-
-	-- Start scripts on separate threads:
-	if (type(serverScript.Start) == "function") then
-		coroutine.wrap(serverScript.Start)(serverScript)
-	end
+    -- Initialize:
+    if (type(serverScript.Init) == "function") then
+        RunSafe(name, function()
+            serverScript:Init()
+        end)
+    end
 
 end
 
+function StartScript(serverScript, name)
+
+    -- Start scripts on separate threads:
+    if (type(serverScript.Start) == "function") then
+        RunSafe(name, function()
+            serverScript:Start()
+        end)
+    end
+
+end
 
 local function InitServices()
     -- Load service modules:
-    for _,module in pairs(servicesFolder:GetChildren()) do
+    for _, module in pairs(servicesFolder:GetChildren()) do
         if (module:IsA("ModuleScript")) then
             LoadService(module)
         end
     end
 
     -- Initialize services:
-    for _,service in pairs(AeroServer.Services) do
-        InitService(service)
+    for name, service in pairs(AeroServer.Services) do
+        InitService(service, name)
     end
 
     -- Start services:
-    for _,service in pairs(AeroServer.Services) do
-        StartService(service)
+    for name, service in pairs(AeroServer.Services) do
+        StartService(service, name)
     end
 end
 
-
 local function InitScripts()
     -- Load script modules:
-    for _,module in pairs(scriptsFolder:GetDescendants()) do
+    for _, module in pairs(scriptsFolder:GetDescendants()) do
         if (module:IsA("ModuleScript")) then
             LoadScript(module)
         end
     end
 
     -- Initialize scripts:
-    for _,serverScript in pairs(AeroServer.Scripts) do
-        InitScript(serverScript)
+    for name, serverScript in pairs(AeroServer.Scripts) do
+        InitScript(serverScript, name)
     end
 
     -- Start scripts:
-    for _,serverScript in pairs(AeroServer.Scripts) do
-        StartScript(serverScript)
+    for name, serverScript in pairs(AeroServer.Scripts) do
+        StartScript(serverScript, name)
     end
 end
 
