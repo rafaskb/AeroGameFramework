@@ -147,9 +147,6 @@ function LoadService(module)
 	
 end
 
-
-end
-
 function InitService(service, name)
 
     -- Initialize:
