@@ -164,7 +164,7 @@ function InitService(service, name)
             end)
         end
     end
-
+end
 
 function StartService(service, name)
     if (type(service.Start) == "function") then
