@@ -115,13 +115,33 @@ end
 
 
 -- Setup table to load modules on demand:
-function LazyLoadSetup(tbl, folder)
+function LazyLoadSetup(tbl, folder, recursive)
 	setmetatable(tbl, {
 		__index = function(t, i)
-			local obj = require(folder[i])
-			if (type(obj) == "table") then
-				Aero:WrapModule(obj)
+			local rawObj = folder[i]
+
+			if rawObj == nil then
+				error("Attempted to index nil value: " .. i)
+				return nil
 			end
+
+			local status, obj = pcall(function()
+				local obj = require(rawObj)
+				if (type(obj) == "table") then
+					Aero:WrapModule(obj)
+				end
+				return obj
+			end)
+
+			if not status and recursive then
+				local name = tostring(rawObj)
+				local childTable = {}
+				tbl[name] = childTable
+				LazyLoadSetup(childTable, rawObj)
+				rawset(t, i, childTbl)
+				obj = childTable
+			end
+
 			rawset(t, i, obj)
 			return obj
 		end;
@@ -233,7 +253,7 @@ function Init()
 	
 	-- Lazy load modules:
 	LazyLoadSetup(Aero.Modules, modulesFolder)
-	LazyLoadSetup(Aero.Shared, sharedFolder)
+	LazyLoadSetup(Aero.Shared, sharedFolder, true)
 	LazyLoadSetup(Aero.Scripts, scriptsFolder)
 
 	-- Load server-side services:
