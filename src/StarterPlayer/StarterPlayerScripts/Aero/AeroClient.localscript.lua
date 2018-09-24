@@ -5,13 +5,13 @@
 
 
 local Aero = {
-	Controllers = {};
-	Modules     = {};
-	Scripts     = {};
-	Shared      = {};
-	Services    = {};
-	_events     = {};
-	Player      = game:GetService("Players").LocalPlayer;
+    Controllers = {};
+    Modules     = {};
+    Scripts     = {};
+    Shared      = {};
+    Services    = {};
+    Events      = {};
+    Player      = game:GetService("Players").LocalPlayer;
 }
 
 local mt = {__index = Aero}
@@ -23,26 +23,28 @@ local sharedFolder = game:GetService("ReplicatedStorage"):WaitForChild("Aero"):W
 
 
 function Aero:RegisterEvent(eventName)
-	assert(not self._events[eventName], string.format("The event name '%s' is already registered.", eventName))
+	assert(not Aero.Events[eventName], string.format("The event name '%s' is already registered.", eventName))
 
 	local event = self.Shared.Event.new()
-	self._events[eventName] = event
+	Aero.Events[eventName] = event
 	return event
 end
 
 
 function Aero:FireEvent(eventName, ...)
-	self._events[eventName]:Fire(...)
+    assert(Aero.Events[eventName], string.format("The event name '%s' is not registered.", eventName))
+	Aero.Events[eventName]:Fire(...)
 end
 
 
 function Aero:ConnectEvent(eventName, func)
-	return self._events[eventName]:Connect(func)
+    assert(Aero.Events[eventName], string.format("The event name '%s' is not registered.", eventName))
+	return Aero.Events[eventName]:Connect(func)
 end
 
 
 function Aero:WaitForEvent(eventName)
-	return self._events[eventName]:Wait()
+	return Aero.Events[eventName]:Wait()
 end
 
 
@@ -67,14 +69,14 @@ function RunSafe(name, f)
 				end
 			end
 		end
-		warn(msg)
+        msg = msg .. "\nORIGINAL ERROR:\n" .. err .. "\n"
+        warn(msg)
 	end
 end
 
 
 function Aero:WrapModule(tbl)
 	assert(type(tbl) == "table", "Expected table for argument")
-	tbl._events = Aero._events
 	setmetatable(tbl, mt)
 	if (type(tbl.Init) == "function") then
 		RunSafe("Wrapped Module", function()
@@ -160,7 +162,6 @@ end
 function LoadController(module)
 	local controller = require(module)
 	Aero.Controllers[module.Name] = controller
-	controller._events = Aero._events
 	setmetatable(controller, mt)
 end
 

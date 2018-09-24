@@ -9,8 +9,8 @@ local AeroServer = {
     Modules = {};
     Scripts = {};
     Shared = {};
-    _events = {};
-    _clientEvents = {};
+    Events = {};
+    ClientEvents = {};
 }
 
 local mt = { __index = AeroServer }
@@ -24,49 +24,52 @@ local remoteServices = Instance.new("Folder")
 remoteServices.Name = "AeroRemoteServices"
 
 function AeroServer:RegisterEvent(eventName)
-    assert(not self._events[eventName], string.format("The event name '%s' is already registered.", eventName))
-
+    assert(not AeroServer.Events[eventName], string.format("The event name '%s' is already registered.", eventName))
     local event = self.Shared.Event.new()
-    self._events[eventName] = event
+    AeroServer.Events[eventName] = event
     return event
 end
 
 function AeroServer:RegisterClientEvent(eventName)
-    assert(not self._clientEvents[eventName], string.format("The client event name '%s' is already registered.", eventName))
-
+    assert(not AeroServer.ClientEvents[eventName], string.format("The client event name '%s' is already registered.", eventName))
     local event = Instance.new("RemoteEvent")
     event.Name = eventName
     event.Parent = self._remoteFolder
-    self._clientEvents[eventName] = event
+    AeroServer.ClientEvents[eventName] = event
     return event
 end
 
 function AeroServer:FireEvent(eventName, ...)
-    self._events[eventName]:Fire(...)
+    assert(AeroServer.Events[eventName], string.format("The event name '%s' is not registered.", eventName))
+    AeroServer.Events[eventName]:Fire(...)
 end
 
 function AeroServer:FireClientEvent(eventName, client, ...)
-    self._clientEvents[eventName]:FireClient(client, ...)
+    assert(AeroServer.ClientEvents[eventName], string.format("The event name '%s' is not registered.", eventName))
+    AeroServer.ClientEvents[eventName]:FireClient(client, ...)
 end
 
 function AeroServer:FireAllClientsEvent(eventName, ...)
-    self._clientEvents[eventName]:FireAllClients(...)
+    assert(AeroServer.ClientEvents[eventName], string.format("The event name '%s' is not registered.", eventName))
+    AeroServer.ClientEvents[eventName]:FireAllClients(...)
 end
 
 function AeroServer:ConnectEvent(eventName, func)
-    return self._events[eventName]:Connect(func)
+    assert(AeroServer.Events[eventName], string.format("The event name '%s' is not registered.", eventName))
+    return AeroServer.Events[eventName]:Connect(func)
 end
 
 function AeroServer:ConnectClientEvent(eventName, func)
-    return self._clientEvents[eventName].OnServerEvent:Connect(func)
+    assert(AeroServer.ClientEvents[eventName], string.format("The event name '%s' is not registered.", eventName))
+    return AeroServer.ClientEvents[eventName].OnServerEvent:Connect(func)
 end
 
 function AeroServer:WaitForEvent(eventName)
-    return self._events[eventName]:Wait()
+    return AeroServer.Events[eventName]:Wait()
 end
 
 function AeroServer:WaitForClientEvent(eventName)
-    return self._clientEvents[eventName]:Wait()
+    return AeroServer.ClientEvents[eventName]:Wait()
 end
 
 function AeroServer:RegisterClientFunction(funcName, func)
@@ -99,14 +102,13 @@ function RunSafe(name, f)
                 end
             end
         end
+        msg = msg .. "\nORIGINAL ERROR:\n" .. err .. "\n"
         warn(msg)
     end
 end
 
 function AeroServer:WrapModule(tbl)
     assert(type(tbl) == "table", "Expected table for argument")
-    tbl._events = AeroServer._events
-    tbl._clientEvents = AeroServer._clientEvents
     setmetatable(tbl, mt)
     if (type(tbl.Init) == "function") then
         RunSafe("Wrapped Module", function()
@@ -172,8 +174,6 @@ function LoadService(module)
 	
 	setmetatable(service, mt)
 	
-	service._events = AeroServer._events
-	service._clientEvents = AeroServer._clientEvents
 	service._remoteFolder = remoteFolder
 	
 end
