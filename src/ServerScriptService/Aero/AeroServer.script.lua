@@ -133,7 +133,7 @@ function LazyLoadSetup(tbl, folder, recursive)
                 local childTable = {}
                 tbl[name] = childTable
                 LazyLoadSetup(childTable, rawObj)
-                rawset(t, i, childTbl)
+                rawset(t, i, childTable)
                 obj = childTable
             end
 
