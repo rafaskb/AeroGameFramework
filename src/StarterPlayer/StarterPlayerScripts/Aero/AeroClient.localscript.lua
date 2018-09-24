@@ -10,7 +10,7 @@ local Aero = {
 	Scripts     = {};
 	Shared      = {};
 	Services    = {};
-	Events	    = {};
+	_events     = {};
 	Player      = game:GetService("Players").LocalPlayer;
 }
 
@@ -74,7 +74,7 @@ end
 
 function Aero:WrapModule(tbl)
 	assert(type(tbl) == "table", "Expected table for argument")
-	tbl._events = Aero.Events
+	tbl._events = Aero._events
 	setmetatable(tbl, mt)
 	if (type(tbl.Init) == "function") then
 		RunSafe("Wrapped Module", function()
@@ -160,7 +160,7 @@ end
 function LoadController(module)
 	local controller = require(module)
 	Aero.Controllers[module.Name] = controller
-	controller._events = Aero.Events
+	controller._events = Aero._events
 	setmetatable(controller, mt)
 end
 

@@ -9,8 +9,8 @@ local AeroServer = {
     Modules = {};
     Scripts = {};
     Shared = {};
-    Events = {};
-    ClientEvents = {};
+    _events = {};
+    _clientEvents = {};
 }
 
 local mt = { __index = AeroServer }
@@ -105,8 +105,8 @@ end
 
 function AeroServer:WrapModule(tbl)
     assert(type(tbl) == "table", "Expected table for argument")
-    tbl._events = AeroServer.Events
-    tbl._clientEvents = AeroServer.ClientEvents
+    tbl._events = AeroServer._events
+    tbl._clientEvents = AeroServer._clientEvents
     setmetatable(tbl, mt)
     if (type(tbl.Init) == "function") then
         RunSafe("Wrapped Module", function()
@@ -172,8 +172,8 @@ function LoadService(module)
 	
 	setmetatable(service, mt)
 	
-	service._events = AeroServer.Events
-	service._clientEvents = AeroServer.ClientEvents
+	service._events = AeroServer._events
+	service._clientEvents = AeroServer._clientEvents
 	service._remoteFolder = remoteFolder
 	
 end
