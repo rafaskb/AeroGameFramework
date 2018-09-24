@@ -43,18 +43,6 @@ function Aero:WaitForEvent(eventName)
 end
 
 
-function Aero:WrapModule(tbl)
-	assert(type(tbl) == "table", "Expected table for argument")
-	tbl._events = {}
-	setmetatable(tbl, mt)
-	if (type(tbl.Init) == "function") then
-		tbl:Init()
-	end
-	if (type(tbl.Start) == "function") then
-		coroutine.wrap(tbl.Start)(tbl)
-	end
-end
-
 
 function RunSafe(name, f)
 	-- Run function
@@ -77,6 +65,23 @@ function RunSafe(name, f)
 			end
 		end
 		warn(msg)
+	end
+end
+
+
+function Aero:WrapModule(tbl)
+	assert(type(tbl) == "table", "Expected table for argument")
+	tbl._events = {}
+	setmetatable(tbl, mt)
+	if (type(tbl.Init) == "function") then
+		RunSafe("Wrapped Module", function()
+			tbl:Init()
+		end)
+	end
+	if (type(tbl.Start) == "function") then
+		RunSafe("Wrapped Module", function()
+			tbl:Start()
+		end)
 	end
 end
 
