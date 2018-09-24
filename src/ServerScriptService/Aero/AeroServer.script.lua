@@ -9,6 +9,8 @@ local AeroServer = {
     Modules = {};
     Scripts = {};
     Shared = {};
+    Events = {};
+    ClientEvents = {};
 }
 
 local mt = { __index = AeroServer }
@@ -22,12 +24,16 @@ local remoteServices = Instance.new("Folder")
 remoteServices.Name = "AeroRemoteServices"
 
 function AeroServer:RegisterEvent(eventName)
+    assert(not self._events[eventName], string.format("The event name '%s' is already registered.", eventName))
+
     local event = self.Shared.Event.new()
     self._events[eventName] = event
     return event
 end
 
 function AeroServer:RegisterClientEvent(eventName)
+    assert(not self._clientEvents[eventName], string.format("The client event name '%s' is already registered.", eventName))
+
     local event = Instance.new("RemoteEvent")
     event.Name = eventName
     event.Parent = self._remoteFolder
@@ -99,7 +105,8 @@ end
 
 function AeroServer:WrapModule(tbl)
     assert(type(tbl) == "table", "Expected table for argument")
-    tbl._events = {}
+    tbl._events = AeroServer.Events
+    tbl._clientEvents = AeroServer.ClientEvents
     setmetatable(tbl, mt)
     if (type(tbl.Init) == "function") then
         RunSafe("Wrapped Module", function()
@@ -165,8 +172,8 @@ function LoadService(module)
 	
 	setmetatable(service, mt)
 	
-	service._events = {}
-	service._clientEvents = {}
+	service._events = AeroServer.Events
+	service._clientEvents = AeroServer.ClientEvents
 	service._remoteFolder = remoteFolder
 	
 end

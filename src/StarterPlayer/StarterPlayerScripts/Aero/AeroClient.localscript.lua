@@ -10,6 +10,7 @@ local Aero = {
 	Scripts     = {};
 	Shared      = {};
 	Services    = {};
+	Events	    = {};
 	Player      = game:GetService("Players").LocalPlayer;
 }
 
@@ -22,6 +23,8 @@ local sharedFolder = game:GetService("ReplicatedStorage"):WaitForChild("Aero"):W
 
 
 function Aero:RegisterEvent(eventName)
+	assert(not self._events[eventName], string.format("The event name '%s' is already registered.", eventName))
+
 	local event = self.Shared.Event.new()
 	self._events[eventName] = event
 	return event
@@ -71,7 +74,7 @@ end
 
 function Aero:WrapModule(tbl)
 	assert(type(tbl) == "table", "Expected table for argument")
-	tbl._events = {}
+	tbl._events = Aero.Events
 	setmetatable(tbl, mt)
 	if (type(tbl.Init) == "function") then
 		RunSafe("Wrapped Module", function()
@@ -157,7 +160,7 @@ end
 function LoadController(module)
 	local controller = require(module)
 	Aero.Controllers[module.Name] = controller
-	controller._events = {}
+	controller._events = Aero.Events
 	setmetatable(controller, mt)
 end
 
