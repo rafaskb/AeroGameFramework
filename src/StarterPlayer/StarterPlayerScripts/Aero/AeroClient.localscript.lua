@@ -14,8 +14,6 @@ local Aero = {
     Player      = game:GetService("Players").LocalPlayer;
 }
 
-local USE_CUSTOM_ERROR_HANDLING = false
-
 local mt = {__index = Aero}
 
 local controllersFolder = script.Parent:WaitForChild("Controllers")
@@ -50,29 +48,14 @@ function Aero:WaitForEvent(eventName)
 end
 
 
-
-function RunSafe(name, f)
-	-- Run function
-	local status, err = xpcall(f, debug.traceback)
+function Aero:RunAsync(func, service, name)
+	name = name or "Unknown Source"
+	local thread = coroutine.create(func)
+	local status, err = coroutine.resume(thread, service)
 	if not status then
-
-		-- Print error
-		local firstLine = true
-		local msg = " --- CLIENT ERROR ---"
-		for s in err:gmatch("[^\r\n]+") do
-			local isAero = s:find("AeroClient")
-			local isStack = s == "Stack Begin" or s == "Stack End"
-			if not isAero and not isStack then
-				if firstLine then
-					msg = msg .. "\nUnhandled error in " .. name .. ": " .. s .. "\nSTACK TRACE:\n"
-					firstLine = false
-				else
-					msg = msg .. "        at " .. s .. "\n"
-				end
-			end
-		end
-        msg = msg .. "\nORIGINAL ERROR:\n" .. err .. "\n"
-        warn(msg)
+		local tracebackMsg = string.format("%s: %s", name, err)
+		local traceback = debug.traceback(thread, tracebackMsg, 2)
+		warn(traceback)
 	end
 end
 
@@ -81,22 +64,10 @@ function Aero:WrapModule(tbl)
 	assert(type(tbl) == "table", "Expected table for argument")
 	setmetatable(tbl, mt)
 	if (type(tbl.Init) == "function") then
-		if USE_CUSTOM_ERROR_HANDLING then
-			RunSafe("Wrapped Module", function()
-				tbl:Init()
-			end)
-		else
-			tbl:Init()
-		end
+		tbl:Init()
 	end
 	if (type(tbl.Start) == "function") then
-		if USE_CUSTOM_ERROR_HANDLING then
-			RunSafe("Wrapped Module", function()
-				tbl:Start()
-			end)
-		else
-			coroutine.wrap(tbl.Sound)(tbl)
-		end
+		Aero:RunAsync(tbl.Start, tbl, "Wrapped Module")
 	end
 end
 
@@ -178,28 +149,15 @@ end
 
 function InitController(controller, name)
 	if (type(controller.Init) == "function") then
-		if USE_CUSTOM_ERROR_HANDLING then
-			RunSafe(name, function()
-				controller:Init()
-			end)
-		else
-			controller:Init()
-		end
+		controller:Init()
 	end
 end
 
 
 function StartController(controller, name)
-
 	-- Start controllers on separate threads:
 	if (type(controller.Start) == "function") then
-		if USE_CUSTOM_ERROR_HANDLING then
-			RunSafe(name, function()
-				controller:Start()
-			end)
-		else
-			coroutine.wrap(controller.Start)(controller)
-		end
+		Aero:RunAsync(controller.Start, controller, name)
 	end
 end
 
@@ -212,13 +170,7 @@ end
 
 function InitScript(clientScript, name)
 	if (type(clientScript.Init) == "function") then
-		if USE_CUSTOM_ERROR_HANDLING then
-			RunSafe(name, function()
-				clientScript:Init()
-			end)
-		else
-			clientScript:Init()
-		end
+		clientScript:Init()
 	end
 end
 
@@ -227,13 +179,7 @@ function StartScript(clientScript, name)
 
 	-- Start scripts on separate threads:
 	if (type(clientScript.Start) == "function") then
-		if USE_CUSTOM_ERROR_HANDLING then
-			RunSafe(name, function()
-				clientScript:Start()
-			end)
-		else
-			coroutine.wrap(clientScript.Start)(clientScript)
-		end
+		Aero:RunAsync(clientScript.Start, clientScript, name)
 	end
 end
 

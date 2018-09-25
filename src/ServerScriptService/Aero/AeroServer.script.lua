@@ -13,8 +13,6 @@ local AeroServer = {
     ClientEvents = {};
 }
 
-local USE_CUSTOM_ERROR_HANDLING = false
-
 local mt = { __index = AeroServer }
 
 local servicesFolder = game:GetService("ServerStorage"):WaitForChild("Aero"):WaitForChild("Services")
@@ -84,28 +82,14 @@ function AeroServer:RegisterClientFunction(funcName, func)
     return remoteFunc
 end
 
-function RunSafe(name, f)
-    -- Run function
-    local status, err = xpcall(f, debug.traceback)
+function AeroServer:RunAsync(func, service, name)
+    name = name or "Unknown Source"
+    local thread = coroutine.create(func)
+    local status, err = coroutine.resume(thread, service)
     if not status then
-
-        -- Print error
-        local firstLine = true
-        local msg = " --- SERVER ERROR ---"
-        for s in err:gmatch("[^\r\n]+") do
-            local isAero = s:find("AeroServer")
-            local isStack = s == "Stack Begin" or s == "Stack End"
-            if not isAero and not isStack then
-                if firstLine then
-                    msg = msg .. "\nUnhandled error in " .. name .. ": " .. s .. "\nSTACK TRACE:\n"
-                    firstLine = false
-                else
-                    msg = msg .. "        at " .. s .. "\n"
-                end
-            end
-        end
-        msg = msg .. "\nORIGINAL ERROR:\n" .. err .. "\n"
-        warn(msg)
+        local tracebackMsg = string.format("%s: %s", name, err)
+        local traceback = debug.traceback(thread, tracebackMsg, 2)
+        warn(traceback)
     end
 end
 
@@ -113,22 +97,10 @@ function AeroServer:WrapModule(tbl)
     assert(type(tbl) == "table", "Expected table for argument")
     setmetatable(tbl, mt)
     if (type(tbl.Init) == "function") then
-        if USE_CUSTOM_ERROR_HANDLING then
-            RunSafe("Wrapped Module", function()
-                tbl:Init()
-            end)
-        else
-            tbl:Init()
-        end
+        tbl:Init()
     end
     if (type(tbl.Start) == "function") then
-        if USE_CUSTOM_ERROR_HANDLING then
-            RunSafe("Wrapped Module", function()
-                tbl:Start()
-            end)
-        else
-            coroutine.wrap(tbl.Start)(tbl)
-        end
+        AeroServer:RunAsync(tbl.Start, tbl, "Wrapped Module")
     end
 end
 
@@ -192,38 +164,20 @@ function InitService(service, name)
 
     -- Initialize:
     if (type(service.Init) == "function") then
-        if USE_CUSTOM_ERROR_HANDLING then
-            RunSafe(name, function()
-                service:Init()
-            end)
-        else
-            service:Init()
-        end
+        service:Init()
     end
 
     -- Client functions:
     for funcName, func in pairs(service.Client) do
         if (type(func) == "function") then
-            if USE_CUSTOM_ERROR_HANDLING then
-                RunSafe(name, function()
-                    service:RegisterClientFunction(funcName, func)
-                end)
-            else
-                service:RegisterClientFunction(funcName, func)
-            end
+            service:RegisterClientFunction(funcName, func)
         end
     end
 end
 
 function StartService(service, name)
     if (type(service.Start) == "function") then
-        if USE_CUSTOM_ERROR_HANDLING then
-            RunSafe(name, function()
-                service:Start()
-            end)
-        else
-            coroutine.wrap(service.Start)(service)
-        end
+        AeroServer:RunAsync(service.Start, service, name)
     end
 end
 
@@ -242,13 +196,7 @@ function InitScript(serverScript, name)
 
     -- Initialize:
     if (type(serverScript.Init) == "function") then
-        if USE_CUSTOM_ERROR_HANDLING then
-            RunSafe(name, function()
-                serverScript:Init()
-            end)
-        else
-            serverScript:Init()
-        end
+        serverScript:Init()
     end
 
 end
@@ -257,13 +205,7 @@ function StartScript(serverScript, name)
 
     -- Start scripts on separate threads:
     if (type(serverScript.Start) == "function") then
-        if USE_CUSTOM_ERROR_HANDLING then
-            RunSafe(name, function()
-                serverScript:Start()
-            end)
-        else
-            coroutine.wrap(serverScript.Start)(serverScript)
-        end
+        AeroServer:RunAsync(serverScript.Start, serverScript, name)
     end
 end
 
