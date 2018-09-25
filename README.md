@@ -1,6 +1,8 @@
 # About this fork
 Aero is a powerful framework, but I thought it could use some changes beyond the official scope to fit my needs, such as recursive loading of modules and a script directory to hold common scripts that are not services.
 
+**Note this fork is completely unstable and major API changes will be made without notice.**
+
 #### Installing this fork
 ```lua
 require(2366776232)()
