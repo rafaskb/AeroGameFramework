@@ -14,6 +14,8 @@ local Aero = {
     Player      = game:GetService("Players").LocalPlayer;
 }
 
+local USE_CUSTOM_ERROR_HANDLING = false
+
 local mt = {__index = Aero}
 
 local controllersFolder = script.Parent:WaitForChild("Controllers")
@@ -79,14 +81,22 @@ function Aero:WrapModule(tbl)
 	assert(type(tbl) == "table", "Expected table for argument")
 	setmetatable(tbl, mt)
 	if (type(tbl.Init) == "function") then
-		RunSafe("Wrapped Module", function()
+		if USE_CUSTOM_ERROR_HANDLING then
+			RunSafe("Wrapped Module", function()
+				tbl:Init()
+			end)
+		else
 			tbl:Init()
-		end)
+		end
 	end
 	if (type(tbl.Start) == "function") then
-		RunSafe("Wrapped Module", function()
-			tbl:Start()
-		end)
+		if USE_CUSTOM_ERROR_HANDLING then
+			RunSafe("Wrapped Module", function()
+				tbl:Start()
+			end)
+		else
+			coroutine.wrap(tbl.Sound)(tbl)
+		end
 	end
 end
 
@@ -168,9 +178,13 @@ end
 
 function InitController(controller, name)
 	if (type(controller.Init) == "function") then
-		RunSafe(name, function()
+		if USE_CUSTOM_ERROR_HANDLING then
+			RunSafe(name, function()
+				controller:Init()
+			end)
+		else
 			controller:Init()
-		end)
+		end
 	end
 end
 
@@ -179,11 +193,14 @@ function StartController(controller, name)
 
 	-- Start controllers on separate threads:
 	if (type(controller.Start) == "function") then
-		RunSafe(name, function()
-			controller:Start()
-		end)
+		if USE_CUSTOM_ERROR_HANDLING then
+			RunSafe(name, function()
+				controller:Start()
+			end)
+		else
+			coroutine.wrap(controller.Start)(controller)
+		end
 	end
-
 end
 
 function LoadScript(module)
@@ -195,9 +212,13 @@ end
 
 function InitScript(clientScript, name)
 	if (type(clientScript.Init) == "function") then
-		RunSafe(name, function()
+		if USE_CUSTOM_ERROR_HANDLING then
+			RunSafe(name, function()
+				clientScript:Init()
+			end)
+		else
 			clientScript:Init()
-		end)
+		end
 	end
 end
 
@@ -206,11 +227,14 @@ function StartScript(clientScript, name)
 
 	-- Start scripts on separate threads:
 	if (type(clientScript.Start) == "function") then
-		RunSafe(name, function()
-			clientScript:Start()
-		end)
+		if USE_CUSTOM_ERROR_HANDLING then
+			RunSafe(name, function()
+				clientScript:Start()
+			end)
+		else
+			coroutine.wrap(clientScript.Start)(clientScript)
+		end
 	end
-
 end
 
 

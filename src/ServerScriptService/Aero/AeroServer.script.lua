@@ -13,6 +13,8 @@ local AeroServer = {
     ClientEvents = {};
 }
 
+local USE_CUSTOM_ERROR_HANDLING = false
+
 local mt = { __index = AeroServer }
 
 local servicesFolder = game:GetService("ServerStorage"):WaitForChild("Aero"):WaitForChild("Services")
@@ -111,14 +113,22 @@ function AeroServer:WrapModule(tbl)
     assert(type(tbl) == "table", "Expected table for argument")
     setmetatable(tbl, mt)
     if (type(tbl.Init) == "function") then
-        RunSafe("Wrapped Module", function()
+        if USE_CUSTOM_ERROR_HANDLING then
+            RunSafe("Wrapped Module", function()
+                tbl:Init()
+            end)
+        else
             tbl:Init()
-        end)
+        end
     end
     if (type(tbl.Start) == "function") then
-        RunSafe("Wrapped Module", function()
-            tbl:Start()
-        end)
+        if USE_CUSTOM_ERROR_HANDLING then
+            RunSafe("Wrapped Module", function()
+                tbl:Start()
+            end)
+        else
+            coroutine.wrap(tbl.Start)(tbl)
+        end
     end
 end
 
@@ -182,26 +192,38 @@ function InitService(service, name)
 
     -- Initialize:
     if (type(service.Init) == "function") then
-        RunSafe(name, function()
+        if USE_CUSTOM_ERROR_HANDLING then
+            RunSafe(name, function()
+                service:Init()
+            end)
+        else
             service:Init()
-        end)
+        end
     end
 
     -- Client functions:
     for funcName, func in pairs(service.Client) do
         if (type(func) == "function") then
-            RunSafe(name, function()
+            if USE_CUSTOM_ERROR_HANDLING then
+                RunSafe(name, function()
+                    service:RegisterClientFunction(funcName, func)
+                end)
+            else
                 service:RegisterClientFunction(funcName, func)
-            end)
+            end
         end
     end
 end
 
 function StartService(service, name)
     if (type(service.Start) == "function") then
-        RunSafe(name, function()
-            service:Start()
-        end)
+        if USE_CUSTOM_ERROR_HANDLING then
+            RunSafe(name, function()
+                service:Start()
+            end)
+        else
+            coroutine.wrap(service.Start)(service)
+        end
     end
 end
 
@@ -220,9 +242,13 @@ function InitScript(serverScript, name)
 
     -- Initialize:
     if (type(serverScript.Init) == "function") then
-        RunSafe(name, function()
+        if USE_CUSTOM_ERROR_HANDLING then
+            RunSafe(name, function()
+                serverScript:Init()
+            end)
+        else
             serverScript:Init()
-        end)
+        end
     end
 
 end
@@ -231,11 +257,14 @@ function StartScript(serverScript, name)
 
     -- Start scripts on separate threads:
     if (type(serverScript.Start) == "function") then
-        RunSafe(name, function()
-            serverScript:Start()
-        end)
+        if USE_CUSTOM_ERROR_HANDLING then
+            RunSafe(name, function()
+                serverScript:Start()
+            end)
+        else
+            coroutine.wrap(serverScript.Start)(serverScript)
+        end
     end
-
 end
 
 local function InitServices()
