@@ -5,13 +5,14 @@
 
 
 local Aero = {
-    Controllers = {};
-    Modules     = {};
-    Scripts     = {};
-    Shared      = {};
-    Services    = {};
-    Events      = {};
-    Player      = game:GetService("Players").LocalPlayer;
+    Controllers   = {};
+    Modules       = {};
+    Scripts       = {};
+    Shared        = {};
+    Services      = {};
+    Events        = {};
+	ServiceEvents = {};
+    Player        = game:GetService("Players").LocalPlayer;
 }
 
 local mt = {__index = Aero}
@@ -40,6 +41,11 @@ end
 function Aero:ConnectEvent(eventName, func)
     assert(Aero.Events[eventName], string.format("The event name '%s' is not registered.", eventName))
 	return Aero.Events[eventName]:Connect(func)
+end
+
+function Aero:ConnectServiceEvent(eventName, func)
+    assert(Aero.ServiceEvents[eventName], string.format("The service event name '%s' is not registered.", eventName))
+	return Aero.ServiceEvents[eventName]:Connect(func)
 end
 
 
@@ -85,11 +91,14 @@ function LoadService(serviceFolder)
 			v.OnClientEvent:Connect(function(...)
 				fireEvent(event, ...)
 			end)
+			Aero.ServiceEvents[v.Name] = event
 			service[v.Name] = event
 		elseif (v:IsA("RemoteFunction")) then
-			service[v.Name] = function(self, ...)
+			local func = function(self, ...)
 				return v:InvokeServer(...)
 			end
+			Aero.ServiceEvents[v.Name] = func
+			service[v.Name] = func
 		end
 	end
 end
