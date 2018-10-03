@@ -95,7 +95,47 @@ end
 
 function AeroServer:WrapModule(tbl)
     assert(type(tbl) == "table", "Expected table for argument")
-    setmetatable(tbl, mt)
+
+    -- If table has a metatable set up, merge __indexes, otherwise set it directly
+    local currentMeta = getmetatable(tbl)
+    if currentMeta then
+        local oldIndex = currentMeta.__index
+        local newMeta = {}
+        for key, value in pairs(currentMeta) do
+            if key:find("__") == 1 then
+                newMeta[key] = value
+            end
+        end
+        newMeta.__index = function(self, key)
+            local result
+
+            -- Check existing metatable
+            if oldIndex then
+                if type(oldIndex) == "function" then
+                    result = oldIndex(self, key)
+                elseif type(oldIndex) == "table" then
+                    result = oldIndex[key]
+                end
+            end
+
+            -- Check Aero's metatable
+            if not result then
+                local aeroIndex = mt.__index
+                if type(aeroIndex) == "function" then
+                    result = aeroIndex(self, key)
+                elseif type(aeroIndex) == "table" then
+                    result = aeroIndex[key]
+                end
+            end
+
+            -- Return result
+            return result
+        end
+        setmetatable(tbl, newMeta)
+    else
+        setmetatable(tbl, mt)
+    end
+
     if (type(tbl.Init) == "function") then
         tbl:Init()
     end
