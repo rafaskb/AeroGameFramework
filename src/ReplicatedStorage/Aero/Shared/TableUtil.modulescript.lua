@@ -9,7 +9,8 @@
 	TableUtil.Print(tbl, label, deepPrint)
 	TableUtil.FastRemove(tbl, index)
 	TableUtil.IndexOf(tbl, element) - Returns the first index found for a certain element in a table, or nil if none.
-	
+	TableUtil.RemoveIndexOf(tbl, element) - Calls IndexOf and removes the table index with FastRemove.
+
 --]]
 
 
@@ -92,6 +93,14 @@ function IndexOf(t, element)
 end
 
 
+function RemoveIndexOf(t, element)
+	local i = IndexOf(t, element)
+	if i then
+		FastRemove(t, i)
+	end
+end
+
+
 function Print(tbl, label, deepPrint)
 	
 	label = (type(label) == "string" and label or "TABLE")
@@ -151,6 +160,8 @@ TableUtil.Copy = CopyTable
 TableUtil.Sync = Sync
 TableUtil.FastRemove = FastRemove
 TableUtil.Print = Print
+TableUtil.IndexOf = IndexOf
+TableUtil.RemoveIndexOf = RemoveIndexOf
 
 
 return TableUtil
