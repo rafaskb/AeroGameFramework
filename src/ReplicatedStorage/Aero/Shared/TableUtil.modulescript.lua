@@ -8,6 +8,7 @@
 	TableUtil.Sync(tbl, templateTbl)
 	TableUtil.Print(tbl, label, deepPrint)
 	TableUtil.FastRemove(tbl, index)
+	TableUtil.IndexOf(tbl, element) - Returns the first index found for a certain element in a table, or nil if none.
 	
 --]]
 
@@ -79,6 +80,15 @@ function FastRemove(t, i)
 	local n = #t
 	t[i] = t[n]
 	t[n] = nil
+end
+
+
+function IndexOf(t, element)
+	for i, e in ipairs(t) do
+		if e == element then
+			return i
+		end
+	end
 end
 
 
