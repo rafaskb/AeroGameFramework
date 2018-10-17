@@ -21,7 +21,6 @@
 
 
 
-local CO_WRAP = coroutine.wrap
 local BLANK_FUNC = function() end
 
 
@@ -50,7 +49,11 @@ function Event:Fire(...)
 	local connections = self._connections
 	for i = 1,#connections do
 		local f = connections[i]._func
-		CO_WRAP(f)(...)
+		local thread = coroutine.create(f)
+		local status, err = coroutine.resume(thread, ...)
+		if not status then
+			warn(debug.traceback(thread, err, 2))
+		end
 	end
 	self._firing = false
 end
