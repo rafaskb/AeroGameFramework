@@ -3,7 +3,7 @@
 	MathUtil.Clamp(value, min, max)
 	MathUtil.NextTriangular(min, max, around)
 	MathUtil.Lerp(from, to, progress)
-	MathUtil.Round(value)
+	MathUtil.Round(value, bracket, trimDecimals)
 
 --]]
 
@@ -34,9 +34,22 @@ local function Lerp(from, to, progress)
     return from + (to - from) * progress
 end
 
--- Rounds a value
-local function Round(value)
-    return math.floor(value + 0.5)
+--- Rounds a number according to the given bracket.
+---
+--- Examples:
+---     Round(123.456789, 100)   -- 100
+---     Round(123.456789, 10)    -- 120
+---     Round(123.456789, 1)     -- 123
+---     Round(123.456789, 0.1)   -- 123.5
+---     Round(123.456789, 0.01)  -- 123.46
+---     Round(123.456789, 0.001) -- 123.457
+---
+local function Round(value, bracket)
+    bracket = bracket or 1
+    if bracket == 0 then
+        bracket = 1
+    end
+    return math.floor(value / bracket + 0.5) * bracket
 end
 
 MathUtil.Clamp = Clamp
