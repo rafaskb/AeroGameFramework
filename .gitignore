@@ -48,4 +48,5 @@ luac.out
 # IntelliJ IDEA project files
 .idea/**
 
-Candy-Miners\.iml
+# Ignore Aero plugin
+plugin/**
