@@ -15,7 +15,7 @@ AeroGameFramework is a Roblox game framework that makes development easy and fun
 
 # Video Tutorial
 Learn how to use the framework in the video tutorial series:
-https://www.youtube.com/watch?v=0oOFgZJPIcY&list=PLk3R4TM3pnqv7doCTUHtn-wkydaA08npc
+https://www.youtube.com/watch?v=8ta0cHX1ceE&index=1&list=PLk3R4TM3pnqv7doCTUHtn-wkydaA08npc
 
 # Structure
 AeroGameFramework is structured into three categories: Server, Client, and Shared.

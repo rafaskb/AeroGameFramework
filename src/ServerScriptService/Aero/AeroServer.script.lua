@@ -136,10 +136,10 @@ function AeroServer:WrapModule(tbl)
         setmetatable(tbl, mt)
     end
 
-    if (type(tbl.Init) == "function") then
+    if (type(tbl.Init) == "function" and not tbl.__aeroPreventInit) then
         tbl:Init()
     end
-    if (type(tbl.Start) == "function") then
+    if (type(tbl.Start) == "function" and not tbl.__aeroPreventStart) then
         AeroServer:RunAsync(tbl.Start, tbl, "Wrapped Module")
     end
 end
