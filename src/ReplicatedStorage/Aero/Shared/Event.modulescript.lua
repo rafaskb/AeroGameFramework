@@ -40,6 +40,7 @@ local CO_RUNNING = coroutine.running
 local CO_YIELD   = coroutine.yield
 local CO_RESUME  = coroutine.resume
 local BLANK_FUNC = function() end
+local ASSERT     = assert
 
 
 local Event = {}
@@ -86,7 +87,7 @@ function Event:Wait()
 	local connection
 	connection = self:Connect(function(...)
 		connection:Disconnect()
-		CO_RESUME(thread, ...)
+		ASSERT(CO_RESUME(thread, ...))
 	end)
 	return CO_YIELD()
 end
