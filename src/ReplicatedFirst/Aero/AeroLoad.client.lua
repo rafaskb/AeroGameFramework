@@ -1,5 +1,5 @@
 --[[
-	test
+	
 	At its heart, the way to wait for the AeroGameFramework to
 	load is to simply wait for it to exist in the _G table:
 	
