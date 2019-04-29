@@ -10,6 +10,7 @@
 	Server:
 		
 		StoreService:HasPurchased(player, productId)
+		StoreService:OwnsGamePass(player, gamePassId)
 		StoreService:GetNumberPurchased(player, productId)
 		
 		StoreService.PromptPurchaseFinished(player, receiptInfo)
@@ -18,6 +19,7 @@
 	Client:
 		
 		StoreService:HasPurchased(productId)
+		StoreService:OwnsGamePass(gamePassId)
 		StoreService:GetNumberPurchased(productId)
 	
 		StoreService.PromptPurchaseFinished(receiptInfo)
@@ -39,7 +41,7 @@ local dataStoreScope = "PlayerReceipts"
 local services
 
 
-function IncrementPurchase(player, productId)
+local function IncrementPurchase(player, productId)
 	productId = tostring(productId)
 	local productPurchases = services.DataService:Get(player, PRODUCT_PURCHASES_KEY)
 	if (not productPurchases) then
@@ -52,8 +54,8 @@ function IncrementPurchase(player, productId)
 end
 
 
-function ProcessReceipt(receiptInfo)
-	
+local function ProcessReceipt(receiptInfo)
+
 	--[[
 		ReceiptInfo:
 			PlayerId               [Number]
@@ -63,35 +65,43 @@ function ProcessReceipt(receiptInfo)
 			CurrencyType           [CurrencyType Enum]
 			CurrencySpent          [Number]
 	--]]
-	
+
 	local player = game:GetService("Players"):GetPlayerByUserId(receiptInfo.PlayerId)
-	
+
 	local dataStoreName = tostring(receiptInfo.PlayerId)
 	local key = tostring(receiptInfo.PurchaseId)
-	
+
 	-- Check if unique purchase was already completed:
 	local alreadyPurchased = services.DataService:GetCustom(dataStoreName, dataStoreScope, key)
-	
+
 	if (not alreadyPurchased) then
 		-- Mark as purchased and save immediately:
 		services.DataService:SetCustom(dataStoreName, dataStoreScope, key, true)
 		services.DataService:FlushCustom(dataStoreName, dataStoreScope, key)
 	end
-	
+
 	if (player) then
 		IncrementPurchase(player, receiptInfo.ProductId)
 		StoreService:FireEvent(PROMPT_PURCHASE_FINISHED_EVENT, player, receiptInfo)
 		StoreService:FireClientEvent(PROMPT_PURCHASE_FINISHED_EVENT, player, receiptInfo)
 	end
-	
+
 	return Enum.ProductPurchaseDecision.PurchaseGranted
-	
+
 end
 
 
 function StoreService:HasPurchased(player, productId)
 	local productPurchases = services.DataService:Get(player, PRODUCT_PURCHASES_KEY)
 	return (productPurchases and productPurchases[tostring(productId)] ~= nil)
+end
+
+
+function StoreService:OwnsGamePass(player, gamePassId)
+	local success, owns = pcall(function()
+		return marketplaceService:UserOwnsGamePassAsync(player.UserId, gamePassId)
+	end)
+	return (success and owns or false)
 end
 
 
@@ -109,6 +119,11 @@ end
 -- Get the number of productId's purchased:
 function StoreService.Client:GetNumberPurchased(player, productId)
 	return self.Server:GetNumberPurchased(player, productId)
+end
+
+
+function StoreService.Client:OwnsGamePass(player, gamePassId)
+	return self.Server:OwnsGamePass(player, gamePassId)
 end
 
 

@@ -19,6 +19,7 @@ local servicesFolder = game:GetService("ServerStorage"):WaitForChild("Aero"):Wai
 local modulesFolder = game:GetService("ServerStorage"):WaitForChild("Aero"):WaitForChild("Modules")
 local scriptsFolder = game:GetService("ServerStorage"):WaitForChild("Aero"):WaitForChild("Scripts")
 local sharedFolder = game:GetService("ReplicatedStorage"):WaitForChild("Aero"):WaitForChild("Shared")
+local internalFolder = game:GetService("ReplicatedStorage"):WaitForChild("Aero"):WaitForChild("Internal")
 
 local remoteServices = Instance.new("Folder")
 remoteServices.Name = "AeroRemoteServices"

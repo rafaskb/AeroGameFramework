@@ -1,56 +1,59 @@
 #!/usr/bin/python
 
 # Author: Stephen Leitnick
-# Date:   July 22, 2017
+# Date:   February 12, 2019
 
+from json import dump
+from subprocess import check_output
 
-import os
-import re
-import json
+FILELIST_NAME = "filelist.json"
+FILELIST_MIN_NAME = "filelist.min.json"
+FILELIST_INDENT = 2
 
-filelistName = "filelist.json"
+FETCH_PREFIX = "https://raw.githubusercontent.com/Sleitnick/AeroGameFramework/master/"
 
-prefix = "https://raw.githubusercontent.com/RafaSKB/AeroGameFramework/master/src/"
-emptyDirSuffix = "EMPTY"
+def write_json_to_file(filename, json_obj, indent):
+	with open(filename, "w") as f:
+		dump(json_obj, f, indent=FILELIST_INDENT if indent else None)
 
-rootdir = os.path.join(".", "src")
-data = {}
-data["url"] = prefix
-data["paths"] = []
+# Find dictionary with the same name within the given array:
+def find(ar, name):
+	a = [x for x in ar if x["name"] == name]
+	if len(a) > 0:
+		return a[0]
+	else:
+		return None
 
+if __name__ == "__main__":
 
-def fix_path(path):
-	return path[len(rootdir) + 1:].replace("\\", "/")
+	print("Building file list...")
 
+	paths_data = []
+	all_files = check_output(["git", "ls-tree", "--name-only", "-r", "master", "src"])
+	paths = all_files.split("\n")
+	for path in paths:
+		path_array = path.split("/")
+		current = paths_data
+		for p in path_array:
+			item = find(current, p)
+			if not item:
+				is_file = p.endswith(".lua")
+				item = {
+					"type": "file" if is_file else "directory",
+					"name": p
+				}
+				if not is_file:
+					item["children"] = []
+				current.append(item)
+			if item["type"] == "directory":
+				current = item["children"]
 
-# Get all files:
-def get_all_files():
-	for subdir,dirs,files in os.walk(rootdir):
-		if (len(files) == 0 and subdir != rootdir and len(dirs) == 0):
-			data["paths"].append(fix_path(rootdir) + "/" + emptyDirSuffix)
-		for file in files:
-			if not file.startswith("."):
-				path = fix_path(os.path.join(subdir, file))
-				data["paths"].append(path)
-				print(path)
+	filelist_data = {
+		"url": FETCH_PREFIX,
+		"paths": paths_data[0]
+	}
 
+	write_json_to_file(FILELIST_NAME, filelist_data, True)
+	write_json_to_file(FILELIST_MIN_NAME, filelist_data, False)
 
-def write_to_filelist_file():
-
-	# Sort and concatenate array:
-	data["paths"].sort(key=len)
-	filelistStr = json.dumps(data, indent=4)
-
-	# Write file:
-	filelist = open(filelistName, "w")
-	filelist.write(filelistStr)
-	filelist.close()
-
-
-def build():
-	get_all_files()
-	write_to_filelist_file()
-
-
-build()
-print "File list built"
+	print("File list built")

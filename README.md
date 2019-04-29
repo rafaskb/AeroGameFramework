@@ -4,9 +4,7 @@ Aero is a powerful framework, but I thought it could use some changes beyond the
 **Note this fork is completely unstable and major API changes will be made without notice.**
 
 #### Installing this fork
-```lua
-require(2366776232)()
-```
+Use Rojo to sync the files to your project.
 
 # AeroGameFramework
 A powerful game framework for the Roblox platform.

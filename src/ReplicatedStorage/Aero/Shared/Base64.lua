@@ -1,7 +1,7 @@
 --- Base64
 -- Encodes and decodes values to and from Base64
 -- @author antifragileer <https://www.roblox.com/users/443282130/profile>
--- @see Developed for the Aero Game Framework <https://github.com/RafaSKB/AeroGameFramework>
+-- @see Developed for the Aero Game Framework <https://github.com/Sleitnick/AeroGameFramework>
 -- @see Adapted from https://github.com/toastdriven/lua-base64 for the Roblox game.
 -- @license BSD
 -- July 15, 2018

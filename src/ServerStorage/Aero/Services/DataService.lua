@@ -11,11 +11,11 @@
 			DataService:Set(player, key, value)
 			DataService:Get(player, key)
 			DataService:Remove(player, key)
+			DataService:OnUpdate(player, key, callback)
 			DataService:Flush(player)
 			DataService:FlushKey(player, key)
 			DataService:FlushAll()
 			DataService:FlushAllConcurrent()
-
 
 		GLOBAL DATA METHODS:
 				
@@ -26,7 +26,6 @@
 			DataService:FlushGlobal(key)
 			DataService:FlushAllGlobal()
 
-
 		CUSTOM DATA METHODS:
 		
 			DataService:SetCustom(name, scope, key, value)
@@ -35,12 +34,10 @@
 			DataService:OnUpdateCustom(name, scope, key, callback)
 			DataService:FlushCustom(name, scope, key)
 			DataService:FlushAllCustom(name, scope, key)
-		
 
 		GAME CLOSING CALLBACK:
 
 			DataService:BindToClose(callbackFunction)
-
 
 		EVENTS:
 
@@ -52,7 +49,6 @@
 	Client:
 	
 		DataService:Get(key)
-
 		DataService.Failed(method, key, errorMessage)
 	
 --]]
@@ -130,6 +126,11 @@ function DataService:Remove(player, key)
 end
 
 
+function DataService:OnUpdate(player, key, callback)
+	return self:GetPlayerCache(player):OnUpdate(key, callback)
+end
+
+
 function DataService:SetGlobal(key, value)
 	globalCache:Set(key, value)
 end
@@ -201,10 +202,21 @@ end
 
 
 function DataService:FlushAll()
-	for player,cache in pairs(playerCaches) do
-		cache:FlushAll()
+	-- Collect caches so they can be safely accessed. Because this is a synchronous process,
+	-- a cache might be removed from the cache tables during the process, thus causing errors
+	-- if simply looping through the original tables.
+	local caches = {}
+	for _,cache in pairs(playerCaches) do
+		caches[#caches + 1] = cache
+		cache.Lock = true
 	end
 	for _,cache in pairs(customCaches) do
+		caches[#caches + 1] = cache
+		cache.Lock = true
+	end
+	-- Flush each cache individually:
+	for _,cache in pairs(caches) do
+		cache.Lock = false
 		cache:FlushAll()
 	end
 	globalCache:FlushAll()
@@ -218,7 +230,7 @@ function DataService:FlushAllConcurrent()
 	for _ in pairs(playerCaches) do
 		numCaches = (numCaches + 1)
 	end
-	for _,cache in pairs(customCaches) do
+	for _ in pairs(customCaches) do
 		numCaches = (numCaches + 1)
 	end
 	if (numCaches == 0) then return end
@@ -228,7 +240,7 @@ function DataService:FlushAllConcurrent()
 			assert(coroutine.resume(thread))
 		end
 	end
-	for player,cache in pairs(playerCaches) do
+	for _,cache in pairs(playerCaches) do
 		spawn(function()
 			cache:FlushAllConcurrent()
 			IncFlushed()
