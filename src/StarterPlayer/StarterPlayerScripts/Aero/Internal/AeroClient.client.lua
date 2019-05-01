@@ -15,7 +15,7 @@ local Aero = {
     Player = game:GetService("Players").LocalPlayer;
 }
 
-local mt = {__index = Aero}
+local mt = { __index = Aero }
 
 local controllersFolders = {}
 local modulesFolders = {}
@@ -23,50 +23,45 @@ local scriptsFolders = {}
 local sharedFolders = {}
 
 function Aero:RegisterEvent(eventName)
-	assert(not Aero.Events[eventName], string.format("The event name '%s' is already registered.", eventName))
+    assert(not Aero.Events[eventName], string.format("The event name '%s' is already registered.", eventName))
 
-	local event = self.Shared.Event.new()
-	Aero.Events[eventName] = event
-	return event
+    local event = self.Shared.Event.new()
+    Aero.Events[eventName] = event
+    return event
 end
-
 
 function Aero:FireEvent(eventName, ...)
     assert(Aero.Events[eventName], string.format("The event name '%s' is not registered.", eventName))
-	Aero.Events[eventName]:Fire(...)
+    Aero.Events[eventName]:Fire(...)
 end
-
 
 function Aero:ConnectEvent(eventName, func)
     assert(Aero.Events[eventName], string.format("The event name '%s' is not registered.", eventName))
-	return Aero.Events[eventName]:Connect(func)
+    return Aero.Events[eventName]:Connect(func)
 end
 
 function Aero:ConnectServiceEvent(eventName, func)
     assert(Aero.ServiceEvents[eventName], string.format("The service event name '%s' is not registered.", eventName))
-	return Aero.ServiceEvents[eventName]:Connect(func)
+    return Aero.ServiceEvents[eventName]:Connect(func)
 end
-
 
 function Aero:WaitForEvent(eventName)
-	return Aero.Events[eventName]:Wait()
+    return Aero.Events[eventName]:Wait()
 end
-
 
 function Aero:RunAsync(func, service, name)
-	name = name or "Unknown Source"
-	local thread = coroutine.create(func)
-	local status, err = coroutine.resume(thread, service)
-	if not status then
-		local tracebackMsg = string.format("%s: %s", name, err)
-		local traceback = debug.traceback(thread, tracebackMsg, 2)
-		warn(traceback)
-	end
+    name = name or "Unknown Source"
+    local thread = coroutine.create(func)
+    local status, err = coroutine.resume(thread, service)
+    if not status then
+        local tracebackMsg = string.format("%s: %s", name, err)
+        local traceback = debug.traceback(thread, tracebackMsg, 2)
+        warn(traceback)
+    end
 end
 
-
 function Aero:WrapModule(tbl)
-	assert(type(tbl) == "table", "Expected table for argument")
+    assert(type(tbl) == "table", "Expected table for argument")
 
     -- If table has a metatable set up, merge __indexes, otherwise set it directly
     local currentMeta = getmetatable(tbl)
@@ -108,55 +103,53 @@ function Aero:WrapModule(tbl)
         setmetatable(tbl, mt)
     end
 
-	if (type(tbl.Init) == "function" and not tbl.__aeroPreventInit) then
-		tbl:Init()
-	end
-	if (type(tbl.Start) == "function" and not tbl.__aeroPreventStart) then
-		Aero:RunAsync(tbl.Start, tbl, "Wrapped Module")
-	end
+    if (type(tbl.Init) == "function" and not tbl.__aeroPreventInit) then
+        tbl:Init()
+    end
+    if (type(tbl.Start) == "function" and not tbl.__aeroPreventStart) then
+        Aero:RunAsync(tbl.Start, tbl, "Wrapped Module")
+    end
 end
-
 
 function LoadService(serviceFolder)
-	local service = {}
-	Aero.Services[serviceFolder.Name] = service
-	for _,v in pairs(serviceFolder:GetChildren()) do
-		if (v:IsA("RemoteEvent")) then
-			local event = Aero.Shared.Event.new()
-			local fireEvent = event.Fire
-			function event:Fire(...)
-				v:FireServer(...)
-			end
-			v.OnClientEvent:Connect(function(...)
-				fireEvent(event, ...)
-			end)
-			Aero.ServiceEvents[v.Name] = event
-			service[v.Name] = event
-		elseif (v:IsA("RemoteFunction")) then
-			local func = function(self, ...)
-				return v:InvokeServer(...)
-			end
-			Aero.ServiceEvents[v.Name] = func
-			service[v.Name] = func
-		end
-	end
+    local service = {}
+    Aero.Services[serviceFolder.Name] = service
+    for _, v in pairs(serviceFolder:GetChildren()) do
+        if (v:IsA("RemoteEvent")) then
+            local event = Aero.Shared.Event.new()
+            local fireEvent = event.Fire
+            function event:Fire(...)
+                v:FireServer(...)
+            end
+            v.OnClientEvent:Connect(function(...)
+                fireEvent(event, ...)
+            end)
+            Aero.ServiceEvents[v.Name] = event
+            service[v.Name] = event
+        elseif (v:IsA("RemoteFunction")) then
+            local func = function(self, ...)
+                return v:InvokeServer(...)
+            end
+            Aero.ServiceEvents[v.Name] = func
+            service[v.Name] = func
+        end
+    end
 end
 
-
 local function LoadServices()
-	local remoteServices = game:GetService("ReplicatedStorage"):WaitForChild("Aero"):WaitForChild("AeroRemoteServices")
-	for _,serviceFolder in pairs(remoteServices:GetChildren()) do
-		if (serviceFolder:IsA("Folder")) then
-			LoadService(serviceFolder)
-		end
-	end
+    local remoteServices = game:GetService("ReplicatedStorage"):WaitForChild("Aero"):WaitForChild("AeroRemoteServices")
+    for _, serviceFolder in pairs(remoteServices:GetChildren()) do
+        if (serviceFolder:IsA("Folder")) then
+            LoadService(serviceFolder)
+        end
+    end
 end
 
 
 -- Setup table to load modules on demand:
 function LazyLoadSetup(tbl, folderArray, recursive)
-	setmetatable(tbl, {
-		__index = function(t, i)
+    setmetatable(tbl, {
+        __index = function(t, i)
             local rawObj
             for _, folder in pairs(folderArray) do
                 rawObj = folder[i]
@@ -170,71 +163,66 @@ function LazyLoadSetup(tbl, folderArray, recursive)
                 return nil
             end
 
-			local status, obj = pcall(function()
-				local obj = require(rawObj)
-				if (type(obj) == "table") then
-					Aero:WrapModule(obj)
-				end
-				return obj
-			end)
+            local status, obj = pcall(function()
+                local obj = require(rawObj)
+                if (type(obj) == "table") then
+                    Aero:WrapModule(obj)
+                end
+                return obj
+            end)
 
-			if not status and recursive then
-				local name = tostring(rawObj)
-				local childTable = {}
-				tbl[name] = childTable
-				LazyLoadSetup(childTable, rawObj)
-				rawset(t, i, childTable)
-				obj = childTable
-			end
+            if not status and recursive then
+                local name = tostring(rawObj)
+                local childTable = {}
+                tbl[name] = childTable
+                LazyLoadSetup(childTable, rawObj)
+                rawset(t, i, childTable)
+                obj = childTable
+            end
 
-			rawset(t, i, obj)
-			return obj
-		end;
-	})
+            rawset(t, i, obj)
+            return obj
+        end;
+    })
 end
-
 
 function LoadController(module)
-	local controller = require(module)
-	Aero.Controllers[module.Name] = controller
-	setmetatable(controller, mt)
+    local controller = require(module)
+    Aero.Controllers[module.Name] = controller
+    setmetatable(controller, mt)
 end
-
 
 function InitController(controller, name)
-	if (type(controller.Init) == "function") then
-		controller:Init()
-	end
+    if (type(controller.Init) == "function") then
+        controller:Init()
+    end
 end
 
-
 function StartController(controller, name)
-	-- Start controllers on separate threads:
-	if (type(controller.Start) == "function") then
-		Aero:RunAsync(controller.Start, controller, name)
-	end
+    -- Start controllers on separate threads:
+    if (type(controller.Start) == "function") then
+        Aero:RunAsync(controller.Start, controller, name)
+    end
 end
 
 function LoadScript(module)
-	local clientScript = require(module)
-	Aero.Scripts[module.Name] = clientScript
-	setmetatable(clientScript, mt)
+    local clientScript = require(module)
+    Aero.Scripts[module.Name] = clientScript
+    setmetatable(clientScript, mt)
 end
-
 
 function InitScript(clientScript, name)
-	if (type(clientScript.Init) == "function") then
-		clientScript:Init()
-	end
+    if (type(clientScript.Init) == "function") then
+        clientScript:Init()
+    end
 end
-
 
 function StartScript(clientScript, name)
 
-	-- Start scripts on separate threads:
-	if (type(clientScript.Start) == "function") then
-		Aero:RunAsync(clientScript.Start, clientScript, name)
-	end
+    -- Start scripts on separate threads:
+    if (type(clientScript.Start) == "function") then
+        Aero:RunAsync(clientScript.Start, clientScript, name)
+    end
 end
 
 local function InitControllers()
