@@ -185,7 +185,6 @@ end
 
 -- Load service from module:
 function LoadService(module)
-
     local remoteFolder = Instance.new("Folder")
     remoteFolder.Name = module.Name
     remoteFolder.Parent = remoteServices
@@ -258,7 +257,12 @@ local function InitServices()
     for _, servicesFolder in pairs(servicesFolders) do
         for _, module in pairs(servicesFolder:GetChildren()) do
             if (module:IsA("ModuleScript")) then
-                LoadService(module)
+                local success, err = pcall(function()
+                    LoadService(module)
+                end)
+                if not success then
+                    warn("[AeroServer] Error loading service " .. tostring(module) .. ": " .. tostring(err))
+                end
             end
         end
     end
@@ -279,7 +283,12 @@ local function InitScripts()
     for _, scriptsFolder in pairs(scriptsFolders) do
         for _, module in pairs(scriptsFolder:GetDescendants()) do
             if (module:IsA("ModuleScript")) then
-                LoadScript(module)
+                local success, err = pcall(function()
+                    LoadScript(module)
+                end)
+                if not success then
+                    warn("[AeroServer] Error loading script " .. tostring(module) .. ": " .. tostring(err))
+                end
             end
         end
     end

@@ -236,7 +236,12 @@ local function InitControllers()
     for _, controllersFolder in pairs(controllersFolders) do
         for _, module in pairs(controllersFolder:GetChildren()) do
             if (module:IsA("ModuleScript")) then
-                LoadController(module)
+                local success, err = pcall(function()
+                    LoadController(module)
+                end)
+                if not success then
+                    warn("[AeroClient] Error loading controller " .. tostring(module) .. ": " .. tostring(err))
+                end
             end
         end
     end
@@ -257,7 +262,12 @@ local function InitScripts()
     for _, scriptsFolder in pairs(scriptsFolders) do
         for _, module in pairs(scriptsFolder:GetDescendants()) do
             if (module:IsA("ModuleScript")) then
-                LoadScript(module)
+                local success, err = pcall(function()
+                    LoadScript(module)
+                end)
+                if not success then
+                    warn("[AeroClient] Error loading script " .. tostring(module) .. ": " .. tostring(err))
+                end
             end
         end
     end
@@ -287,7 +297,7 @@ local function FetchFolders()
         return false
     end
 
-    local clientSourceFolder = Aero.Player.PlayerStarterScripts:WaitForChild("Source")
+    local clientSourceFolder = Aero.Player.PlayerScripts:WaitForChild("Source")
     for _, child in pairs(clientSourceFolder:GetChildren()) do
         if isAeroFolder(child) then
             table.insert(controllersFolders, child:FindFirstChild("Controllers"))
