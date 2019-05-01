@@ -343,6 +343,9 @@ local function FetchFolders()
 end
 
 function Init()
+    -- Give other scripts some time to run before Aero
+    wait(1)
+    
     -- Fetch folders
     FetchFolders()
 
