@@ -149,10 +149,16 @@ function AeroServer:WrapModule(tbl)
 end
 
 -- Setup table to load modules on demand:
-function LazyLoadSetup(tbl, folder, recursive)
+function LazyLoadSetup(tbl, folderArray, recursive)
     setmetatable(tbl, {
         __index = function(t, i)
-            local rawObj = folder[i]
+            local rawObj
+            for _, folder in pairs(folderArray) do
+                rawObj = folder[i]
+                if rawObj ~= nil then
+                    break
+                end
+            end
 
             if rawObj == nil then
                 error("Attempted to index nil value: " .. i)
@@ -340,15 +346,9 @@ function Init()
     FetchFolders()
 
     -- Lazy-load server and shared modules:
-    for _, modulesFolder in pairs(modulesFolders) do
-        LazyLoadSetup(AeroServer.Modules, modulesFolder)
-    end
-    for _, sharedFolder in pairs(sharedFolders) do
-        LazyLoadSetup(AeroServer.Shared, sharedFolder, true)
-    end
-    for _, scriptsFolder in pairs(scriptsFolders) do
-        LazyLoadSetup(AeroServer.Scripts, scriptsFolder)
-    end
+    LazyLoadSetup(AeroServer.Modules, modulesFolders)
+    LazyLoadSetup(AeroServer.Shared, sharedFolders, true)
+    LazyLoadSetup(AeroServer.Scripts, scriptsFolders)
 
     -- Init services and scripts
     InitServices()

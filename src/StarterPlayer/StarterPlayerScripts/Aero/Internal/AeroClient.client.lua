@@ -154,15 +154,21 @@ end
 
 
 -- Setup table to load modules on demand:
-function LazyLoadSetup(tbl, folder, recursive)
+function LazyLoadSetup(tbl, folderArray, recursive)
 	setmetatable(tbl, {
 		__index = function(t, i)
-			local rawObj = folder[i]
+            local rawObj
+            for _, folder in pairs(folderArray) do
+                rawObj = folder[i]
+                if rawObj ~= nil then
+                    break
+                end
+            end
 
-			if rawObj == nil then
-				error("Attempted to index nil value: " .. i)
-				return nil
-			end
+            if rawObj == nil then
+                error("Attempted to index nil value: " .. i)
+                return nil
+            end
 
 			local status, obj = pcall(function()
 				local obj = require(rawObj)
@@ -319,15 +325,9 @@ function Init()
     FetchFolders()
 
     -- Lazy load modules:
-    for _, modulesFolder in pairs(modulesFolders) do
-        LazyLoadSetup(Aero.Modules, modulesFolder)
-    end
-    for _, sharedFolder in pairs(sharedFolders) do
-        LazyLoadSetup(Aero.Shared, sharedFolder, true)
-    end
-    for _, scriptsFolder in pairs(scriptsFolders) do
-        LazyLoadSetup(Aero.Scripts, scriptsFolder)
-    end
+    LazyLoadSetup(Aero.Modules, modulesFolders)
+    LazyLoadSetup(Aero.Shared, sharedFolders, true)
+    LazyLoadSetup(Aero.Scripts, scriptsFolders)
 
     -- Load server-side services:
     LoadServices()
