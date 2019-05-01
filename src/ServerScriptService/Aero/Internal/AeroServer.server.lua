@@ -15,14 +15,17 @@ local AeroServer = {
 
 local mt = { __index = AeroServer }
 
-local servicesFolder = game:GetService("ServerStorage"):WaitForChild("Aero"):WaitForChild("Services")
-local modulesFolder = game:GetService("ServerStorage"):WaitForChild("Aero"):WaitForChild("Modules")
-local scriptsFolder = game:GetService("ServerStorage"):WaitForChild("Aero"):WaitForChild("Scripts")
-local sharedFolder = game:GetService("ReplicatedStorage"):WaitForChild("Aero"):WaitForChild("Shared")
-local internalFolder = game:GetService("ReplicatedStorage"):WaitForChild("Aero"):WaitForChild("Internal")
+local servicesFolders = {}
+local modulesFolders = {}
+local scriptsFolders = {}
+local sharedFolders = {}
 
 local remoteServices = Instance.new("Folder")
 remoteServices.Name = "AeroRemoteServices"
+
+function AeroServer:GetDependency(name)
+    return self.Services[name] or self.Modules[name] or self.Scrips[name] or self.Shared[name]
+end
 
 function AeroServer:RegisterEvent(eventName)
     assert(not AeroServer.Events[eventName], string.format("The event name '%s' is already registered.", eventName))
@@ -182,23 +185,23 @@ end
 
 -- Load service from module:
 function LoadService(module)
-	
-	local remoteFolder = Instance.new("Folder")
-	remoteFolder.Name = module.Name
-	remoteFolder.Parent = remoteServices
-	
-	local service = require(module)
-	AeroServer.Services[module.Name] = service
-	
-	if (type(service.Client) ~= "table") then
-		service.Client = {}
-	end
-	service.Client.Server = service
-	
-	setmetatable(service, mt)
-	
-	service._remoteFolder = remoteFolder
-	
+
+    local remoteFolder = Instance.new("Folder")
+    remoteFolder.Name = module.Name
+    remoteFolder.Parent = remoteServices
+
+    local service = require(module)
+    AeroServer.Services[module.Name] = service
+
+    if (type(service.Client) ~= "table") then
+        service.Client = {}
+    end
+    service.Client.Server = service
+
+    setmetatable(service, mt)
+
+    service._remoteFolder = remoteFolder
+
 end
 
 function InitService(service, name)
@@ -226,10 +229,10 @@ end
 -- Load script from module:
 function LoadScript(module)
 
-	local serverScript = require(module)
-	AeroServer.Scripts[module.Name] = serverScript
+    local serverScript = require(module)
+    AeroServer.Scripts[module.Name] = serverScript
 
-	setmetatable(serverScript, mt)
+    setmetatable(serverScript, mt)
 
 end
 
@@ -252,9 +255,11 @@ end
 
 local function InitServices()
     -- Load service modules:
-    for _, module in pairs(servicesFolder:GetChildren()) do
-        if (module:IsA("ModuleScript")) then
-            LoadService(module)
+    for _, servicesFolder in pairs(servicesFolders) do
+        for _, module in pairs(servicesFolder:GetChildren()) do
+            if (module:IsA("ModuleScript")) then
+                LoadService(module)
+            end
         end
     end
 
@@ -271,9 +276,11 @@ end
 
 local function InitScripts()
     -- Load script modules:
-    for _, module in pairs(scriptsFolder:GetDescendants()) do
-        if (module:IsA("ModuleScript")) then
-            LoadScript(module)
+    for _, scriptsFolder in pairs(scriptsFolders) do
+        for _, module in pairs(scriptsFolder:GetDescendants()) do
+            if (module:IsA("ModuleScript")) then
+                LoadScript(module)
+            end
         end
     end
 
@@ -288,12 +295,51 @@ local function InitScripts()
     end
 end
 
+local function FetchFolders()
+    local function isAeroFolder(folder)
+        if folder:IsA("Folder") then
+            if folder.Name == "Aero" then
+                return true
+            end
+            local aeroFolderValue = folder:FindFirstChild("AeroFolder")
+            if aeroFolderValue and aeroFolderValue.Value then
+                return true
+            end
+        end
+        return false
+    end
+
+    local serverSourceFolder = game:GetService("ServerStorage"):WaitForChild("Source")
+    for _, child in pairs(serverSourceFolder:GetChildren()) do
+        if isAeroFolder(child) then
+            table.insert(servicesFolders, child:FindFirstChild("Services"))
+            table.insert(modulesFolders, child:FindFirstChild("Modules"))
+            table.insert(scriptsFolders, child:FindFirstChild("Scripts"))
+        end
+    end
+
+    local sharedSourceFolder = game:GetService("ReplicatedStorage"):WaitForChild("Source")
+    for _, child in pairs(sharedSourceFolder:GetChildren()) do
+        if isAeroFolder(child) then
+            table.insert(sharedFolders, child:FindFirstChild("Shared"))
+        end
+    end
+end
+
 function Init()
+    -- Fetch folders
+    FetchFolders()
 
     -- Lazy-load server and shared modules:
-    LazyLoadSetup(AeroServer.Modules, modulesFolder)
-    LazyLoadSetup(AeroServer.Shared, sharedFolder, true)
-    LazyLoadSetup(AeroServer.Scripts, scriptsFolder)
+    for _, modulesFolder in pairs(modulesFolders) do
+        LazyLoadSetup(AeroServer.Modules, modulesFolder)
+    end
+    for _, sharedFolder in pairs(sharedFolders) do
+        LazyLoadSetup(AeroServer.Shared, sharedFolder, true)
+    end
+    for _, scriptsFolder in pairs(scriptsFolders) do
+        LazyLoadSetup(AeroServer.Scripts, scriptsFolder)
+    end
 
     -- Init services and scripts
     InitServices()

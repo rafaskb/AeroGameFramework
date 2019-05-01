@@ -5,24 +5,22 @@
 
 
 local Aero = {
-    Controllers   = {};
-    Modules       = {};
-    Scripts       = {};
-    Shared        = {};
-    Services      = {};
-    Events        = {};
-	ServiceEvents = {};
-    Player        = game:GetService("Players").LocalPlayer;
+    Controllers = {};
+    Modules = {};
+    Scripts = {};
+    Shared = {};
+    Services = {};
+    Events = {};
+    ServiceEvents = {};
+    Player = game:GetService("Players").LocalPlayer;
 }
 
 local mt = {__index = Aero}
 
-local controllersFolder = script.Parent.Parent:WaitForChild("Controllers")
-local modulesFolder = script.Parent.Parent:WaitForChild("Modules")
-local scriptsFolder = script.Parent.Parent:WaitForChild("Scripts")
-local sharedFolder = game:GetService("ReplicatedStorage"):WaitForChild("Aero"):WaitForChild("Shared")
-local internalFolder = game:GetService("ReplicatedStorage"):WaitForChild("Aero"):WaitForChild("Internal")
-
+local controllersFolders = {}
+local modulesFolders = {}
+local scriptsFolders = {}
+local sharedFolders = {}
 
 function Aero:RegisterEvent(eventName)
 	assert(not Aero.Events[eventName], string.format("The event name '%s' is already registered.", eventName))
@@ -145,7 +143,7 @@ function LoadService(serviceFolder)
 end
 
 
-function LoadServices()
+local function LoadServices()
 	local remoteServices = game:GetService("ReplicatedStorage"):WaitForChild("Aero"):WaitForChild("AeroRemoteServices")
 	for _,serviceFolder in pairs(remoteServices:GetChildren()) do
 		if (serviceFolder:IsA("Folder")) then
@@ -233,69 +231,104 @@ function StartScript(clientScript, name)
 	end
 end
 
-
 local function InitControllers()
+    -- Load controllers:
+    for _, controllersFolder in pairs(controllersFolders) do
+        for _, module in pairs(controllersFolder:GetChildren()) do
+            if (module:IsA("ModuleScript")) then
+                LoadController(module)
+            end
+        end
+    end
 
-	-- Load controllers:
-	for _,module in pairs(controllersFolder:GetChildren()) do
-		if (module:IsA("ModuleScript")) then
-			LoadController(module)
-		end
-	end
-	
-	-- Initialize controllers:
-	for name,controller in pairs(Aero.Controllers) do
-		InitController(controller, name)
-	end
-	
-	-- Start controllers:
-	for name,controller in pairs(Aero.Controllers) do
-		StartController(controller, name)
-	end
+    -- Initialize controllers:
+    for name, controller in pairs(Aero.Controllers) do
+        InitController(controller, name)
+    end
 
+    -- Start controllers:
+    for name, controller in pairs(Aero.Controllers) do
+        StartController(controller, name)
+    end
 end
-
 
 local function InitScripts()
+    -- Load scripts:
+    for _, scriptsFolder in pairs(scriptsFolders) do
+        for _, module in pairs(scriptsFolder:GetDescendants()) do
+            if (module:IsA("ModuleScript")) then
+                LoadScript(module)
+            end
+        end
+    end
 
-	-- Load scripts:
-	for _,module in pairs(scriptsFolder:GetDescendants()) do
-		if (module:IsA("ModuleScript")) then
-			LoadScript(module)
-		end
-	end
+    -- Initialize scripts:
+    for name, clientScript in pairs(Aero.Scripts) do
+        InitScript(clientScript, name)
+    end
 
-	-- Initialize scripts:
-	for name,clientScript in pairs(Aero.Scripts) do
-		InitScript(clientScript, name)
-	end
-
-	-- Start scripts:
-	for name,clientScript in pairs(Aero.Scripts) do
-		StartScript(clientScript, name)
-	end
-
+    -- Start scripts:
+    for name, clientScript in pairs(Aero.Scripts) do
+        StartScript(clientScript, name)
+    end
 end
 
+local function FetchFolders()
+    local function isAeroFolder(folder)
+        if folder:IsA("Folder") then
+            if folder.Name == "Aero" then
+                return true
+            end
+            local aeroFolderValue = folder:FindFirstChild("AeroFolder")
+            if aeroFolderValue and aeroFolderValue.Value then
+                return true
+            end
+        end
+        return false
+    end
+
+    local clientSourceFolder = Aero.Player.PlayerStarterScripts:WaitForChild("Source")
+    for _, child in pairs(clientSourceFolder:GetChildren()) do
+        if isAeroFolder(child) then
+            table.insert(controllersFolders, child:FindFirstChild("Controllers"))
+            table.insert(modulesFolders, child:FindFirstChild("Modules"))
+            table.insert(scriptsFolders, child:FindFirstChild("Scripts"))
+        end
+    end
+
+    local sharedSourceFolder = game:GetService("ReplicatedStorage"):WaitForChild("Source")
+    for _, child in pairs(sharedSourceFolder:GetChildren()) do
+        if isAeroFolder(child) then
+            table.insert(sharedFolders, child:FindFirstChild("Shared"))
+        end
+    end
+end
 
 function Init()
-	
-	-- Lazy load modules:
-	LazyLoadSetup(Aero.Modules, modulesFolder)
-	LazyLoadSetup(Aero.Shared, sharedFolder, true)
-	LazyLoadSetup(Aero.Scripts, scriptsFolder)
+    -- Fetch folders
+    FetchFolders()
 
-	-- Load server-side services:
-	LoadServices()
+    -- Lazy load modules:
+    for _, modulesFolder in pairs(modulesFolders) do
+        LazyLoadSetup(Aero.Modules, modulesFolder)
+    end
+    for _, sharedFolder in pairs(sharedFolders) do
+        LazyLoadSetup(Aero.Shared, sharedFolder, true)
+    end
+    for _, scriptsFolder in pairs(scriptsFolders) do
+        LazyLoadSetup(Aero.Scripts, scriptsFolder)
+    end
 
-	-- Init controllers and scripts
-	InitControllers()
-	InitScripts()
+    -- Load server-side services:
+    LoadServices()
 
-	-- Expose client framework globally:
-	_G.Aero = Aero
-	
+    -- Init controllers and scripts
+    InitControllers()
+    InitScripts()
+
+    -- Expose client framework globally:
+    _G.Aero = Aero
+
 end
-
 
 Init()
