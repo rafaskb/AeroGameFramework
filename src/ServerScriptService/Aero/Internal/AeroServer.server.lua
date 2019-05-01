@@ -22,6 +22,7 @@ local sharedFolders = {}
 
 local remoteServices = Instance.new("Folder")
 remoteServices.Name = "AeroRemoteServices"
+remoteServices.Parent = game:GetService("ReplicatedStorage")
 
 function AeroServer:GetDependency(name)
     return self.Services[name] or self.Modules[name] or self.Scrips[name] or self.Shared[name]
@@ -355,7 +356,6 @@ function Init()
     InitScripts()
 
     -- Expose server framework to client and global scope:
-    remoteServices.Parent = game:GetService("ReplicatedStorage").Aero
     _G.AeroServer = AeroServer
 
 end

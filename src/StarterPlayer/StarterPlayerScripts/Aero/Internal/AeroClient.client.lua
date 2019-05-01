@@ -137,7 +137,7 @@ function LoadService(serviceFolder)
 end
 
 local function LoadServices()
-    local remoteServices = game:GetService("ReplicatedStorage"):WaitForChild("Aero"):WaitForChild("AeroRemoteServices")
+    local remoteServices = game:GetService("ReplicatedStorage"):WaitForChild("AeroRemoteServices")
     for _, serviceFolder in pairs(remoteServices:GetChildren()) do
         if (serviceFolder:IsA("Folder")) then
             LoadService(serviceFolder)
