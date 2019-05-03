@@ -149,6 +149,21 @@ function AeroServer:WrapModule(tbl)
     end
 end
 
+local function LoadModuleRecursively(instance, loadFunc)
+    if instance:IsA("ModuleScript") then
+        local success, err = pcall(function()
+            loadFunc(instance)
+        end)
+        if not success then
+            warn("[AeroServer] Error loading module " .. tostring(module) .. ": " .. tostring(err))
+        end
+    elseif instance:IsA("Folder") then
+        for _, child in pairs(instance:GetChildren()) do
+            LoadModuleRecursively(child)
+        end
+    end
+end
+
 -- Setup table to load modules on demand:
 function LazyLoadSetup(tbl, folderArray, recursive)
     setmetatable(tbl, {
@@ -262,16 +277,7 @@ end
 local function InitServices()
     -- Load service modules:
     for _, servicesFolder in pairs(servicesFolders) do
-        for _, module in pairs(servicesFolder:GetChildren()) do
-            if (module:IsA("ModuleScript")) then
-                local success, err = pcall(function()
-                    LoadService(module)
-                end)
-                if not success then
-                    warn("[AeroServer] Error loading service " .. tostring(module) .. ": " .. tostring(err))
-                end
-            end
-        end
+        LoadModuleRecursively(servicesFolder, LoadService)
     end
 
     -- Initialize services:
@@ -288,16 +294,7 @@ end
 local function InitScripts()
     -- Load script modules:
     for _, scriptsFolder in pairs(scriptsFolders) do
-        for _, module in pairs(scriptsFolder:GetDescendants()) do
-            if (module:IsA("ModuleScript")) then
-                local success, err = pcall(function()
-                    LoadScript(module)
-                end)
-                if not success then
-                    warn("[AeroServer] Error loading script " .. tostring(module) .. ": " .. tostring(err))
-                end
-            end
-        end
+        LoadModuleRecursively(scriptsFolder, LoadScript)
     end
 
     -- Initialize scripts:
@@ -345,14 +342,14 @@ end
 function Init()
     -- Give other scripts some time to run before Aero
     wait(1)
-    
+
     -- Fetch folders
     FetchFolders()
 
     -- Lazy-load server and shared modules:
-    LazyLoadSetup(AeroServer.Modules, modulesFolders)
+    LazyLoadSetup(AeroServer.Modules, modulesFolders, true)
     LazyLoadSetup(AeroServer.Shared, sharedFolders, true)
-    LazyLoadSetup(AeroServer.Scripts, scriptsFolders)
+    LazyLoadSetup(AeroServer.Scripts, scriptsFolders, true)
 
     -- Init services and scripts
     InitServices()

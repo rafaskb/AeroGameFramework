@@ -111,6 +111,21 @@ function Aero:WrapModule(tbl)
     end
 end
 
+local function LoadModuleRecursively(instance, loadFunc)
+    if instance:IsA("ModuleScript") then
+        local success, err = pcall(function()
+            loadFunc(instance)
+        end)
+        if not success then
+            warn("[AeroClient] Error loading module " .. tostring(module) .. ": " .. tostring(err))
+        end
+    elseif instance:IsA("Folder") then
+        for _, child in pairs(instance:GetChildren()) do
+            LoadModuleRecursively(child)
+        end
+    end
+end
+
 function LoadService(serviceFolder)
     local service = {}
     Aero.Services[serviceFolder.Name] = service
@@ -226,18 +241,9 @@ function StartScript(clientScript, name)
 end
 
 local function InitControllers()
-    -- Load controllers:
+    -- Load service modules:
     for _, controllersFolder in pairs(controllersFolders) do
-        for _, module in pairs(controllersFolder:GetChildren()) do
-            if (module:IsA("ModuleScript")) then
-                local success, err = pcall(function()
-                    LoadController(module)
-                end)
-                if not success then
-                    warn("[AeroClient] Error loading controller " .. tostring(module) .. ": " .. tostring(err))
-                end
-            end
-        end
+        LoadModuleRecursively(controllersFolder, LoadController)
     end
 
     -- Initialize controllers:
@@ -252,18 +258,9 @@ local function InitControllers()
 end
 
 local function InitScripts()
-    -- Load scripts:
+    -- Load script modules:
     for _, scriptsFolder in pairs(scriptsFolders) do
-        for _, module in pairs(scriptsFolder:GetDescendants()) do
-            if (module:IsA("ModuleScript")) then
-                local success, err = pcall(function()
-                    LoadScript(module)
-                end)
-                if not success then
-                    warn("[AeroClient] Error loading script " .. tostring(module) .. ": " .. tostring(err))
-                end
-            end
-        end
+        LoadModuleRecursively(scriptsFolder, LoadScript)
     end
 
     -- Initialize scripts:
@@ -316,9 +313,9 @@ function Init()
     FetchFolders()
 
     -- Lazy load modules:
-    LazyLoadSetup(Aero.Modules, modulesFolders)
+    LazyLoadSetup(Aero.Modules, modulesFolders, true)
     LazyLoadSetup(Aero.Shared, sharedFolders, true)
-    LazyLoadSetup(Aero.Scripts, scriptsFolders)
+    LazyLoadSetup(Aero.Scripts, scriptsFolders, true)
 
     -- Load server-side services:
     LoadServices()
