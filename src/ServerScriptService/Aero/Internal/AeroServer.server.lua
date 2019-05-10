@@ -217,16 +217,16 @@ function AeroServer:WrapModule(tbl)
     end
 end
 
-local function LoadModuleRecursively(instance, loadFunc)
-    if instance:IsA("ModuleScript") then
+local function LoadModuleRecursively(module, loadFunc)
+    if module:IsA("ModuleScript") then
         local success, err = pcall(function()
-            loadFunc(instance)
+            loadFunc(module)
         end)
         if not success then
             warn("[AeroServer] Error loading module " .. tostring(module) .. ": " .. tostring(err))
         end
-    elseif instance:IsA("Folder") then
-        for _, child in pairs(instance:GetChildren()) do
+    elseif module:IsA("Folder") then
+        for _, child in pairs(module:GetChildren()) do
             LoadModuleRecursively(child)
         end
     end
