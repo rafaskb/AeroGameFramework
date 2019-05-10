@@ -319,7 +319,7 @@ In certain circumstances, you may want to access the framework from code executi
 
 ### Server Global Example
 ```lua
-while (not _G.Aero) do wait() end
+while (not _G.Aero or not _G.Aero.Loaded) do wait() end
 local aero = _G.Aero
 
 aero.Services.SomeService:DoSomething()
@@ -327,7 +327,7 @@ aero.Services.SomeService:DoSomething()
 
 ### Client Global Example
 ```lua
-while (not _G.Aero) do wait() end
+while (not _G.Aero or not _G.Aero.Loaded) do wait() end
 local aero = _G.Aero
 
 aero.Controllers.Fade:In()

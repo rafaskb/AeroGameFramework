@@ -2,6 +2,7 @@
 ---@class AeroServer
 ---
 local AeroServer = {
+    Loaded = false;
     Services = {};
     Modules = {};
     Scripts = {};
@@ -407,6 +408,9 @@ local function FetchFolders()
 end
 
 local function Init()
+    -- Expose server framework to client and global scope:
+    _G.Aero = AeroServer
+
     -- Give other scripts some time to run before Aero
     wait(1)
 
@@ -422,8 +426,8 @@ local function Init()
     InitServices()
     InitScripts()
 
-    -- Expose server framework to client and global scope:
-    _G.Aero = AeroServer
+    -- Set framework as loaded
+    AeroServer.Loaded = true
 end
 
 Init()

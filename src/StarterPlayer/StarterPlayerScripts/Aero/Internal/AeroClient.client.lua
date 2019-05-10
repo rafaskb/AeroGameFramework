@@ -2,6 +2,7 @@
 ---@class AeroClient
 ---
 local AeroClient = {
+    Loaded = false;
     Controllers = {};
     Modules = {};
     Scripts = {};
@@ -348,6 +349,9 @@ local function FetchFolders()
 end
 
 local function Init()
+    -- Expose client framework globally:
+    _G.Aero = AeroClient
+
     -- Give other scripts some time to run before Aero
     wait(1)
 
@@ -366,8 +370,8 @@ local function Init()
     InitControllers()
     InitScripts()
 
-    -- Expose client framework globally:
-    _G.Aero = AeroClient
+    -- Set framework as loaded
+    AeroClient.Loaded = true
 end
 
 Init()
