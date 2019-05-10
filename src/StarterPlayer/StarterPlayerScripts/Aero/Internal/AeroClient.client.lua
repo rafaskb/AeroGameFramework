@@ -1,7 +1,7 @@
 ---
 ---@class AeroClient
 ---
-local Aero = {
+local AeroClient = {
     Controllers = {};
     Modules = {};
     Scripts = {};
@@ -12,7 +12,7 @@ local Aero = {
     Player = game:GetService("Players").LocalPlayer;
 }
 
-local mt = { __index = Aero }
+local mt = { __index = AeroClient }
 
 local controllersFolders = {}
 local modulesFolders = {}
@@ -25,7 +25,7 @@ local sharedFolders = {}
 ---@param name string
 ---@return T
 ---
-function Aero:Require(name)
+function AeroClient:Require(name)
     return self.Controllers[name] or self.Modules[name] or self.Scrips[name] or self.Shared[name] or self.Services[name]
 end
 
@@ -34,11 +34,11 @@ end
 ---@param eventName string
 ---@return Event
 ---
-function Aero:RegisterEvent(eventName)
-    assert(not Aero.Events[eventName], string.format("The event name '%s' is already registered.", eventName))
+function AeroClient:RegisterEvent(eventName)
+    assert(not AeroClient.Events[eventName], string.format("The event name '%s' is already registered.", eventName))
 
     local event = self.Shared.Event.new()
-    Aero.Events[eventName] = event
+    AeroClient.Events[eventName] = event
     return event
 end
 
@@ -47,9 +47,9 @@ end
 ---@param eventName string
 ---@vararg data Multiple parameters are accepted, but usually a table holding all data (recommended).
 ---
-function Aero:FireEvent(eventName, ...)
-    assert(Aero.Events[eventName], string.format("The event name '%s' is not registered.", eventName))
-    Aero.Events[eventName]:Fire(...)
+function AeroClient:FireEvent(eventName, ...)
+    assert(AeroClient.Events[eventName], string.format("The event name '%s' is not registered.", eventName))
+    AeroClient.Events[eventName]:Fire(...)
 end
 
 ---
@@ -57,9 +57,9 @@ end
 ---@param eventName string
 ---@param func fun(table) Listener function that receives a table parameter containing all event data.
 ---
-function Aero:ConnectEvent(eventName, func)
-    assert(Aero.Events[eventName], string.format("The event name '%s' is not registered.", eventName))
-    return Aero.Events[eventName]:Connect(func)
+function AeroClient:ConnectEvent(eventName, func)
+    assert(AeroClient.Events[eventName], string.format("The event name '%s' is not registered.", eventName))
+    return AeroClient.Events[eventName]:Connect(func)
 end
 
 ---
@@ -67,17 +67,17 @@ end
 ---@param eventName string
 ---@param func fun(table) Listener function that receives a table parameter containing all event data.
 ---
-function Aero:ConnectServiceEvent(eventName, func)
-    assert(Aero.ServiceEvents[eventName], string.format("The service event name '%s' is not registered.", eventName))
-    return Aero.ServiceEvents[eventName]:Connect(func)
+function AeroClient:ConnectServiceEvent(eventName, func)
+    assert(AeroClient.ServiceEvents[eventName], string.format("The service event name '%s' is not registered.", eventName))
+    return AeroClient.ServiceEvents[eventName]:Connect(func)
 end
 
 ---
 ---Waits for an event to be fired, yielding the thread.
 ---@param eventName string
 ---
-function Aero:WaitForEvent(eventName)
-    return Aero.Events[eventName]:Wait()
+function AeroClient:WaitForEvent(eventName)
+    return AeroClient.Events[eventName]:Wait()
 end
 
 ---
@@ -86,7 +86,7 @@ end
 ---@param module table Aero module passed as self to the given function. Optional.
 ---@param name string Name of the function for debug purposes.Optional.
 ---
-function Aero:RunAsync(func, module, name)
+function AeroClient:RunAsync(func, module, name)
     name = name or "Unknown Source"
     local thread = coroutine.create(func)
     local status, err = coroutine.resume(thread, module)
@@ -103,7 +103,7 @@ end
 ---@param tbl table
 ---@return T
 ---
-function Aero:WrapModule(tbl)
+function AeroClient:WrapModule(tbl)
     assert(type(tbl) == "table", "Expected table for argument")
 
     -- If table has a metatable set up, merge __indexes, otherwise set it directly
@@ -150,7 +150,7 @@ function Aero:WrapModule(tbl)
         tbl:Init()
     end
     if (type(tbl.Start) == "function" and not tbl.__aeroPreventStart) then
-        Aero:RunAsync(tbl.Start, tbl, "Wrapped Module")
+        AeroClient:RunAsync(tbl.Start, tbl, "Wrapped Module")
     end
 end
 
@@ -171,10 +171,10 @@ end
 
 local function LoadService(serviceFolder)
     local service = {}
-    Aero.Services[serviceFolder.Name] = service
+    AeroClient.Services[serviceFolder.Name] = service
     for _, v in pairs(serviceFolder:GetChildren()) do
         if (v:IsA("RemoteEvent")) then
-            local event = Aero.Shared.Event.new()
+            local event = AeroClient.Shared.Event.new()
             local fireEvent = event.Fire
             function event:Fire(...)
                 v:FireServer(...)
@@ -182,13 +182,13 @@ local function LoadService(serviceFolder)
             v.OnClientEvent:Connect(function(...)
                 fireEvent(event, ...)
             end)
-            Aero.ServiceEvents[v.Name] = event
+            AeroClient.ServiceEvents[v.Name] = event
             service[v.Name] = event
         elseif (v:IsA("RemoteFunction")) then
             local func = function(self, ...)
                 return v:InvokeServer(...)
             end
-            Aero.ServiceEvents[v.Name] = func
+            AeroClient.ServiceEvents[v.Name] = func
             service[v.Name] = func
         end
     end
@@ -219,7 +219,7 @@ local function LazyLoadSetup(tbl, folderArray, recursive)
             local status, obj = pcall(function()
                 local obj = require(rawObj)
                 if (type(obj) == "table") then
-                    Aero:WrapModule(obj)
+                    AeroClient:WrapModule(obj)
                 end
                 return obj
             end)
@@ -245,7 +245,7 @@ end
 
 local function LoadController(module)
     local controller = require(module)
-    Aero.Controllers[module.Name] = controller
+    AeroClient.Controllers[module.Name] = controller
     setmetatable(controller, mt)
 end
 
@@ -258,13 +258,13 @@ end
 local function StartController(controller, name)
     -- Start controllers on separate threads:
     if (type(controller.Start) == "function") then
-        Aero:RunAsync(controller.Start, controller, name)
+        AeroClient:RunAsync(controller.Start, controller, name)
     end
 end
 
 local function LoadScript(module)
     local clientScript = require(module)
-    Aero.Scripts[module.Name] = clientScript
+    AeroClient.Scripts[module.Name] = clientScript
     setmetatable(clientScript, mt)
 end
 
@@ -278,7 +278,7 @@ local function StartScript(clientScript, name)
 
     -- Start scripts on separate threads:
     if (type(clientScript.Start) == "function") then
-        Aero:RunAsync(clientScript.Start, clientScript, name)
+        AeroClient:RunAsync(clientScript.Start, clientScript, name)
     end
 end
 
@@ -289,12 +289,12 @@ local function InitControllers()
     end
 
     -- Initialize controllers:
-    for name, controller in pairs(Aero.Controllers) do
+    for name, controller in pairs(AeroClient.Controllers) do
         InitController(controller, name)
     end
 
     -- Start controllers:
-    for name, controller in pairs(Aero.Controllers) do
+    for name, controller in pairs(AeroClient.Controllers) do
         StartController(controller, name)
     end
 end
@@ -306,12 +306,12 @@ local function InitScripts()
     end
 
     -- Initialize scripts:
-    for name, clientScript in pairs(Aero.Scripts) do
+    for name, clientScript in pairs(AeroClient.Scripts) do
         InitScript(clientScript, name)
     end
 
     -- Start scripts:
-    for name, clientScript in pairs(Aero.Scripts) do
+    for name, clientScript in pairs(AeroClient.Scripts) do
         StartScript(clientScript, name)
     end
 end
@@ -330,7 +330,7 @@ local function FetchFolders()
         return false
     end
 
-    local clientSourceFolder = Aero.Player.PlayerScripts:WaitForChild("Source")
+    local clientSourceFolder = AeroClient.Player.PlayerScripts:WaitForChild("Source")
     for _, child in pairs(clientSourceFolder:GetChildren()) do
         if isAeroFolder(child) then
             table.insert(controllersFolders, child:FindFirstChild("Controllers"))
@@ -355,9 +355,9 @@ local function Init()
     FetchFolders()
 
     -- Lazy load modules:
-    LazyLoadSetup(Aero.Modules, modulesFolders, true)
-    LazyLoadSetup(Aero.Shared, sharedFolders, true)
-    LazyLoadSetup(Aero.Scripts, scriptsFolders, true)
+    LazyLoadSetup(AeroClient.Modules, modulesFolders, true)
+    LazyLoadSetup(AeroClient.Shared, sharedFolders, true)
+    LazyLoadSetup(AeroClient.Scripts, scriptsFolders, true)
 
     -- Load server-side services:
     LoadServices()
@@ -367,7 +367,7 @@ local function Init()
     InitScripts()
 
     -- Expose client framework globally:
-    _G.Aero = Aero
+    _G.Aero = AeroClient
 end
 
 Init()
