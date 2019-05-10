@@ -22,6 +22,10 @@ local modulesFolders = {}
 local scriptsFolders = {}
 local sharedFolders = {}
 
+function Aero:Require(name)
+    return self.Controllers[name] or self.Modules[name] or self.Scrips[name] or self.Shared[name] or self.Services[name]
+end
+
 function Aero:RegisterEvent(eventName)
     assert(not Aero.Events[eventName], string.format("The event name '%s' is already registered.", eventName))
 
@@ -126,7 +130,7 @@ local function LoadModuleRecursively(instance, loadFunc)
     end
 end
 
-function LoadService(serviceFolder)
+local function LoadService(serviceFolder)
     local service = {}
     Aero.Services[serviceFolder.Name] = service
     for _, v in pairs(serviceFolder:GetChildren()) do
@@ -162,7 +166,7 @@ end
 
 
 -- Setup table to load modules on demand:
-function LazyLoadSetup(tbl, folderArray, recursive)
+local function LazyLoadSetup(tbl, folderArray, recursive)
     setmetatable(tbl, {
         __index = function(t, i)
             local rawObj
@@ -201,38 +205,38 @@ function LazyLoadSetup(tbl, folderArray, recursive)
     })
 end
 
-function LoadController(module)
+local function LoadController(module)
     local controller = require(module)
     Aero.Controllers[module.Name] = controller
     setmetatable(controller, mt)
 end
 
-function InitController(controller, name)
+local function InitController(controller, name)
     if (type(controller.Init) == "function") then
         controller:Init()
     end
 end
 
-function StartController(controller, name)
+local function StartController(controller, name)
     -- Start controllers on separate threads:
     if (type(controller.Start) == "function") then
         Aero:RunAsync(controller.Start, controller, name)
     end
 end
 
-function LoadScript(module)
+local function LoadScript(module)
     local clientScript = require(module)
     Aero.Scripts[module.Name] = clientScript
     setmetatable(clientScript, mt)
 end
 
-function InitScript(clientScript, name)
+local function InitScript(clientScript, name)
     if (type(clientScript.Init) == "function") then
         clientScript:Init()
     end
 end
 
-function StartScript(clientScript, name)
+local function StartScript(clientScript, name)
 
     -- Start scripts on separate threads:
     if (type(clientScript.Start) == "function") then
@@ -305,7 +309,7 @@ local function FetchFolders()
     end
 end
 
-function Init()
+local function Init()
     -- Give other scripts some time to run before Aero
     wait(1)
 

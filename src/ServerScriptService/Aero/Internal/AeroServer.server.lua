@@ -24,7 +24,7 @@ local remoteServices = Instance.new("Folder")
 remoteServices.Name = "AeroRemoteServices"
 remoteServices.Parent = game:GetService("ReplicatedStorage")
 
-function AeroServer:GetDependency(name)
+function AeroServer:Require(name)
     return self.Services[name] or self.Modules[name] or self.Scrips[name] or self.Shared[name]
 end
 
@@ -165,7 +165,7 @@ local function LoadModuleRecursively(instance, loadFunc)
 end
 
 -- Setup table to load modules on demand:
-function LazyLoadSetup(tbl, folderArray, recursive)
+local function LazyLoadSetup(tbl, folderArray, recursive)
     setmetatable(tbl, {
         __index = function(t, i)
             local rawObj
@@ -206,7 +206,7 @@ end
 
 
 -- Load service from module:
-function LoadService(module)
+local function LoadService(module)
     local remoteFolder = Instance.new("Folder")
     remoteFolder.Name = module.Name
     remoteFolder.Parent = remoteServices
@@ -225,7 +225,7 @@ function LoadService(module)
 
 end
 
-function InitService(service, name)
+local function InitService(service, name)
 
     -- Initialize:
     if (type(service.Init) == "function") then
@@ -240,7 +240,7 @@ function InitService(service, name)
     end
 end
 
-function StartService(service, name)
+local function StartService(service, name)
     if (type(service.Start) == "function") then
         AeroServer:RunAsync(service.Start, service, name)
     end
@@ -248,7 +248,7 @@ end
 
 
 -- Load script from module:
-function LoadScript(module)
+local function LoadScript(module)
 
     local serverScript = require(module)
     AeroServer.Scripts[module.Name] = serverScript
@@ -257,7 +257,7 @@ function LoadScript(module)
 
 end
 
-function InitScript(serverScript, name)
+local function InitScript(serverScript, name)
 
     -- Initialize:
     if (type(serverScript.Init) == "function") then
@@ -266,7 +266,7 @@ function InitScript(serverScript, name)
 
 end
 
-function StartScript(serverScript, name)
+local function StartScript(serverScript, name)
 
     -- Start scripts on separate threads:
     if (type(serverScript.Start) == "function") then
@@ -339,7 +339,7 @@ local function FetchFolders()
     end
 end
 
-function Init()
+local function Init()
     -- Give other scripts some time to run before Aero
     wait(1)
 
