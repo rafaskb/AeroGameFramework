@@ -368,7 +368,6 @@ local function Init()
 
     -- Expose client framework globally:
     _G.Aero = Aero
-
 end
 
 Init()

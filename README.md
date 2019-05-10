@@ -319,10 +319,10 @@ In certain circumstances, you may want to access the framework from code executi
 
 ### Server Global Example
 ```lua
-while (not _G.AeroServer) do wait() end
-local aeroServer = _G.AeroServer
+while (not _G.Aero) do wait() end
+local aero = _G.Aero
 
-aeroServer.Services.SomeService:DoSomething()
+aero.Services.SomeService:DoSomething()
 ```
 
 ### Client Global Example

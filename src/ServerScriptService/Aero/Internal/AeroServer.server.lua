@@ -423,8 +423,7 @@ local function Init()
     InitScripts()
 
     -- Expose server framework to client and global scope:
-    _G.AeroServer = AeroServer
-
+    _G.Aero = AeroServer
 end
 
 Init()
