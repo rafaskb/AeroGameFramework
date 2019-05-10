@@ -164,7 +164,7 @@ local function LoadModuleRecursively(module, loadFunc)
         end
     elseif module:IsA("Folder") then
         for _, child in pairs(module:GetChildren()) do
-            LoadModuleRecursively(child)
+            LoadModuleRecursively(child, loadFunc)
         end
     end
 end
@@ -210,15 +210,10 @@ local function LazyLoadSetup(tbl, folderArray, recursive)
         __index = function(t, i)
             local rawObj
             for _, folder in pairs(folderArray) do
-                rawObj = folder[i]
+                rawObj = folder:FindFirstChild(i)
                 if rawObj ~= nil then
                     break
                 end
-            end
-
-            if rawObj == nil then
-                error("Attempted to index nil value: " .. i)
-                return nil
             end
 
             local status, obj = pcall(function()
@@ -229,13 +224,17 @@ local function LazyLoadSetup(tbl, folderArray, recursive)
                 return obj
             end)
 
-            if not status and recursive then
-                local name = tostring(rawObj)
-                local childTable = {}
-                tbl[name] = childTable
-                LazyLoadSetup(childTable, rawObj)
-                rawset(t, i, childTable)
-                obj = childTable
+            if not status then
+                if recursive then
+                    local name = tostring(rawObj)
+                    local childTable = {}
+                    tbl[name] = childTable
+                    LazyLoadSetup(childTable, rawObj)
+                    rawset(t, i, childTable)
+                    obj = childTable
+                else
+                    error("Attempted to index nil value: " .. i)
+                end
             end
 
             rawset(t, i, obj)
