@@ -1,9 +1,6 @@
--- Aero Server
--- Crazyman32
--- July 21, 2017
-
-
-
+---
+---@class AeroServer
+---
 local AeroServer = {
     Services = {};
     Modules = {};
@@ -24,10 +21,21 @@ local remoteServices = Instance.new("Folder")
 remoteServices.Name = "AeroRemoteServices"
 remoteServices.Parent = game:GetService("ReplicatedStorage")
 
+---
+---Requires a dependency by its name. It can be a module, script, service, all kinds of dependencies will be checked.
+---@generic T
+---@param name string
+---@return T
+---
 function AeroServer:Require(name)
     return self.Services[name] or self.Modules[name] or self.Scrips[name] or self.Shared[name]
 end
 
+---
+---Registers a server-side event with the given name. All events need unique names.
+---@param eventName string
+---@return Event
+---
 function AeroServer:RegisterEvent(eventName)
     assert(not AeroServer.Events[eventName], string.format("The event name '%s' is already registered.", eventName))
     local event = self.Shared.Event.new()
@@ -35,6 +43,11 @@ function AeroServer:RegisterEvent(eventName)
     return event
 end
 
+---
+---Registers an event from server to client with the given name. All events need unique names.
+---@param eventName string
+---@return Event
+---
 function AeroServer:RegisterClientEvent(eventName)
     assert(not AeroServer.ClientEvents[eventName], string.format("The client event name '%s' is already registered.", eventName))
     local event = Instance.new("RemoteEvent")
@@ -44,39 +57,82 @@ function AeroServer:RegisterClientEvent(eventName)
     return event
 end
 
+---
+---Fires an event to this server.
+---@param eventName string
+---@vararg data Multiple parameters are accepted, but usually a table holding all data (recommended).
+---
 function AeroServer:FireEvent(eventName, ...)
     assert(AeroServer.Events[eventName], string.format("The event name '%s' is not registered.", eventName))
     AeroServer.Events[eventName]:Fire(...)
 end
 
+---
+---Fires an event to a specific client.
+---@param eventName string
+---@param client Player Client receiving the event.
+---@vararg data Multiple parameters are accepted, but usually a table holding all data (recommended).
+---
 function AeroServer:FireClientEvent(eventName, client, ...)
     assert(AeroServer.ClientEvents[eventName], string.format("The event name '%s' is not registered.", eventName))
     AeroServer.ClientEvents[eventName]:FireClient(client, ...)
 end
 
+---
+---Fires an event to all connected clients at once.
+---@param eventName string
+---@vararg data Multiple parameters are accepted, but usually a table holding all data (recommended).
+---
 function AeroServer:FireAllClientsEvent(eventName, ...)
     assert(AeroServer.ClientEvents[eventName], string.format("The event name '%s' is not registered.", eventName))
     AeroServer.ClientEvents[eventName]:FireAllClients(...)
 end
 
+---
+---Connects a listener function to an event, which will be called each time the event is fired.
+---@param eventName string
+---@param func fun(table) Listener function that receives a table parameter containing all event data.
+---
 function AeroServer:ConnectEvent(eventName, func)
     assert(AeroServer.Events[eventName], string.format("The event name '%s' is not registered.", eventName))
     return AeroServer.Events[eventName]:Connect(func)
 end
 
+---
+---Connects a listener function to a client event that was registered via "RegisterClientEvent".
+---This is usually not wanted, as client events are meant to be listened in the client, not in the server.
+---@param eventName string
+---@param func fun(table) Listener function that receives a table parameter containing all event data.
+---
 function AeroServer:ConnectClientEvent(eventName, func)
     assert(AeroServer.ClientEvents[eventName], string.format("The event name '%s' is not registered.", eventName))
     return AeroServer.ClientEvents[eventName].OnServerEvent:Connect(func)
 end
 
+---
+---Waits for an event to be fired, yielding the thread.
+---@param eventName string
+---
 function AeroServer:WaitForEvent(eventName)
     return AeroServer.Events[eventName]:Wait()
 end
 
+---
+---Waits for a client event to be fired, yielding the thread.
+---This is usually not wanted, as client events are meant to be listened in the client, not in the server.
+---@param eventName string
+---
 function AeroServer:WaitForClientEvent(eventName)
     return AeroServer.ClientEvents[eventName]:Wait()
 end
 
+---
+---Registers a server function that's supposed to be called from the client.
+---This is usually done automatically when registering services with Client tables, but it can also be done manually if necessary.
+---@param funcName string
+---@param func function
+---@return RemoteFunction
+---
 function AeroServer:RegisterClientFunction(funcName, func)
     local remoteFunc = Instance.new("RemoteFunction")
     remoteFunc.Name = funcName
@@ -87,10 +143,16 @@ function AeroServer:RegisterClientFunction(funcName, func)
     return remoteFunc
 end
 
-function AeroServer:RunAsync(func, service, name)
+---
+---Runs a function asynchronously via coroutines.
+---@param func function Function to be executed asynchronously.
+---@param module table Aero module passed as self to the given function. Optional.
+---@param name string Name of the function for debug purposes.Optional.
+---
+function AeroServer:RunAsync(func, module, name)
     name = name or "Unknown Source"
     local thread = coroutine.create(func)
-    local status, err = coroutine.resume(thread, service)
+    local status, err = coroutine.resume(thread, module)
     if not status then
         local tracebackMsg = string.format("%s: %s", name, err)
         local traceback = debug.traceback(thread, tracebackMsg, 2)
@@ -98,6 +160,12 @@ function AeroServer:RunAsync(func, service, name)
     end
 end
 
+---
+---Wraps a table as an Aero module, inheriting all Aero functions.
+---Init and Start functions are automatically called.
+---@param tbl table
+---@return T
+---
 function AeroServer:WrapModule(tbl)
     assert(type(tbl) == "table", "Expected table for argument")
 

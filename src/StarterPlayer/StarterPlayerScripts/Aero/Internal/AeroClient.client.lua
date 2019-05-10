@@ -1,9 +1,6 @@
--- Aero Client
--- Crazyman32
--- July 21, 2017
-
-
-
+---
+---@class AeroClient
+---
 local Aero = {
     Controllers = {};
     Modules = {};
@@ -22,10 +19,21 @@ local modulesFolders = {}
 local scriptsFolders = {}
 local sharedFolders = {}
 
+---
+---Requires a dependency by its name. It can be a module, script, service, all kinds of dependencies will be checked.
+---@generic T
+---@param name string
+---@return T
+---
 function Aero:Require(name)
     return self.Controllers[name] or self.Modules[name] or self.Scrips[name] or self.Shared[name] or self.Services[name]
 end
 
+---
+---Registers a client-side event with the given name. All events need unique names.
+---@param eventName string
+---@return Event
+---
 function Aero:RegisterEvent(eventName)
     assert(not Aero.Events[eventName], string.format("The event name '%s' is already registered.", eventName))
 
@@ -34,29 +42,54 @@ function Aero:RegisterEvent(eventName)
     return event
 end
 
+---
+---Fires an event to this client.
+---@param eventName string
+---@vararg data Multiple parameters are accepted, but usually a table holding all data (recommended).
+---
 function Aero:FireEvent(eventName, ...)
     assert(Aero.Events[eventName], string.format("The event name '%s' is not registered.", eventName))
     Aero.Events[eventName]:Fire(...)
 end
 
+---
+---Connects a listener function to an event, which will be called each time the event is fired.
+---@param eventName string
+---@param func fun(table) Listener function that receives a table parameter containing all event data.
+---
 function Aero:ConnectEvent(eventName, func)
     assert(Aero.Events[eventName], string.format("The event name '%s' is not registered.", eventName))
     return Aero.Events[eventName]:Connect(func)
 end
 
+---
+---Connects a listener function to an event fired from the server to this client.
+---@param eventName string
+---@param func fun(table) Listener function that receives a table parameter containing all event data.
+---
 function Aero:ConnectServiceEvent(eventName, func)
     assert(Aero.ServiceEvents[eventName], string.format("The service event name '%s' is not registered.", eventName))
     return Aero.ServiceEvents[eventName]:Connect(func)
 end
 
+---
+---Waits for an event to be fired, yielding the thread.
+---@param eventName string
+---
 function Aero:WaitForEvent(eventName)
     return Aero.Events[eventName]:Wait()
 end
 
-function Aero:RunAsync(func, service, name)
+---
+---Runs a function asynchronously via coroutines.
+---@param func function Function to be executed asynchronously.
+---@param module table Aero module passed as self to the given function. Optional.
+---@param name string Name of the function for debug purposes.Optional.
+---
+function Aero:RunAsync(func, module, name)
     name = name or "Unknown Source"
     local thread = coroutine.create(func)
-    local status, err = coroutine.resume(thread, service)
+    local status, err = coroutine.resume(thread, module)
     if not status then
         local tracebackMsg = string.format("%s: %s", name, err)
         local traceback = debug.traceback(thread, tracebackMsg, 2)
@@ -64,6 +97,12 @@ function Aero:RunAsync(func, service, name)
     end
 end
 
+---
+---Wraps a table as an Aero module, inheriting all Aero functions.
+---Init and Start functions are automatically called.
+---@param tbl table
+---@return T
+---
 function Aero:WrapModule(tbl)
     assert(type(tbl) == "table", "Expected table for argument")
 
