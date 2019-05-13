@@ -20,6 +20,9 @@ local modulesFolders = {}
 local scriptsFolders = {}
 local sharedFolders = {}
 
+---@type ParamUtil
+local ParamUtil
+
 ---
 ---Requires a dependency by its name. It can be a module, script, service, all kinds of dependencies will be checked.
 ---@generic T
@@ -178,6 +181,10 @@ local function LoadService(serviceFolder)
             local event = AeroClient.Shared.Event.new()
             local fireEvent = event.Fire
             function event:Fire(...)
+                local success, err = ParamUtil:IsValidForNetworking({ ... })
+                if not success then
+                    error("Error while firing event to server: " .. err, 1)
+                end
                 v:FireServer(...)
             end
             v.OnClientEvent:Connect(function(...)
@@ -187,6 +194,10 @@ local function LoadService(serviceFolder)
             service[v.Name] = event
         elseif (v:IsA("RemoteFunction")) then
             local func = function(self, ...)
+                local success, err = ParamUtil:IsValidForNetworking({ ... })
+                if not success then
+                    error("Error while firing event to server: " .. err, 1)
+                end
                 return v:InvokeServer(...)
             end
             AeroClient.ServiceEvents[v.Name] = func
@@ -362,6 +373,9 @@ local function Init()
     LazyLoadSetup(AeroClient.Modules, modulesFolders, true)
     LazyLoadSetup(AeroClient.Shared, sharedFolders, true)
     LazyLoadSetup(AeroClient.Scripts, scriptsFolders, true)
+
+    -- Init dependencies
+    ParamUtil = AeroClient.Shared.ParamUtil
 
     -- Load server-side services:
     LoadServices()

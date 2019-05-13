@@ -18,6 +18,9 @@ local modulesFolders = {}
 local scriptsFolders = {}
 local sharedFolders = {}
 
+---@type ParamUtil
+local ParamUtil
+
 local remoteServices = Instance.new("Folder")
 remoteServices.Name = "AeroRemoteServices"
 remoteServices.Parent = game:GetService("ReplicatedStorage")
@@ -76,6 +79,10 @@ end
 ---
 function AeroServer:FireClientEvent(eventName, client, ...)
     assert(AeroServer.ClientEvents[eventName], string.format("The event name '%s' is not registered.", eventName))
+    local success, err = ParamUtil:IsValidForNetworking({ ... })
+    if not success then
+        error("Error while firing event to client: " .. err, 1)
+    end
     AeroServer.ClientEvents[eventName]:FireClient(client, ...)
 end
 
@@ -86,6 +93,10 @@ end
 ---
 function AeroServer:FireAllClientsEvent(eventName, ...)
     assert(AeroServer.ClientEvents[eventName], string.format("The event name '%s' is not registered.", eventName))
+    local success, err = ParamUtil:IsValidForNetworking({ ... })
+    if not success then
+        error("Error while firing event to client: " .. err, 1)
+    end
     AeroServer.ClientEvents[eventName]:FireAllClients(...)
 end
 
@@ -421,6 +432,9 @@ local function Init()
     LazyLoadSetup(AeroServer.Modules, modulesFolders, true)
     LazyLoadSetup(AeroServer.Shared, sharedFolders, true)
     LazyLoadSetup(AeroServer.Scripts, scriptsFolders, true)
+
+    -- Init dependencies
+    ParamUtil = AeroServer.Shared.ParamUtil
 
     -- Init services and scripts
     InitServices()

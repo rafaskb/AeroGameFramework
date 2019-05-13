@@ -28,10 +28,10 @@ local Cache = {}
 Cache.__index = Cache
 
 local SafeDataStore
-
+local ParamUtil ---@type ParamUtil
 
 function Cache.new(name, scope)
-	
+
 	local self = setmetatable({
 		Name = name;
 		Scope = scope;
@@ -48,9 +48,9 @@ function Cache.new(name, scope)
 			self.Failed:Fire(method, key, errMsg)
 		end)
 	end
-	
+
 	return self
-	
+
 end
 
 
@@ -125,11 +125,13 @@ function Cache:Get(key)
 	return value and value[1] or nil
 end
 
-
 function Cache:Set(key, value)
-	local v = self.Data[key]
-	if (v == nil) then
-		self.Data[key] = {value, false}
+    -- Scan value for objects and functions
+    ParamUtil:IsValidForDataStores({ key = value })
+
+    local v = self.Data[key]
+    if (v == nil) then
+        self.Data[key] = { value, false }
 	else
 		v[1] = value
 		v[2] = false
@@ -153,6 +155,10 @@ function Cache:Destroy()
 	end
 end
 
+
+function Cache:Start()
+	ParamUtil = self.Shared.ParamUtil
+end
 
 function Cache:Init()
 	SafeDataStore = require(script:WaitForChild("SafeDataStore"))
