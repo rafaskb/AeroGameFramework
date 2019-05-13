@@ -271,11 +271,6 @@ function DataService:AutoSaveLoop()
 end
 
 
-function DataService.Client:Get(player, key)
-	return self.Server:Get(player, key)
-end
-
-
 function DataService:Start()
 	
 	self.GameClosing = false
