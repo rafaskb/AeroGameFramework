@@ -66,8 +66,7 @@ end
 --- 3. (Network check) Tables cannot be indexed by both numbers and strings.
 --- 4. (Network check) Tables can only be indexed by numbers or strings (no functions as keys).
 --- 5. (Network check) Parameters cannot be functions.
---- 6. Parameter cannot be an object.
---- 7. Parameter cannot be a Roblox Instance.
+--- 6. Parameter cannot be a Roblox Instance.
 ---
 ---@return boolean,string Success flag and error message, if any.
 ---
@@ -82,11 +81,6 @@ function ParamUtil:IsValidForDataStores(instance)
     local type = string.lower(typeof(instance))
     if type == "instance" then
         return false, "Parameters cannot be Roblox Instances."
-    end
-
-    -- Make sure parameter is not an object
-    if type == "table" and getmetatable(instance) then
-        return false, "Parameters cannot be objects."
     end
 
     -- Instance is clean
