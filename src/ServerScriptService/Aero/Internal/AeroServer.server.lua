@@ -191,9 +191,10 @@ end
 ---Wraps a table as an Aero module, inheriting all Aero functions.
 ---Init and Start functions are automatically called.
 ---@param tbl table
+---@param skipInit boolean Whether or not initialization functions should be skipped. Defaults to false.
 ---@return T
 ---
-function AeroServer:WrapModule(tbl)
+function AeroServer:WrapModule(tbl, skipInit)
     assert(type(tbl) == "table", "Expected table for argument")
 
     -- If table has a metatable set up, merge __indexes, otherwise set it directly
@@ -236,11 +237,13 @@ function AeroServer:WrapModule(tbl)
         setmetatable(tbl, mt)
     end
 
-    if (type(tbl.Init) == "function" and not tbl.__aeroPreventInit) then
-        tbl:Init()
-    end
-    if (type(tbl.Start) == "function" and not tbl.__aeroPreventStart) then
-        AeroServer:RunAsync(tbl.Start, tbl, "Wrapped Module")
+    if not skipInit then
+        if (type(tbl.Init) == "function" and not tbl.__aeroPreventInit) then
+            tbl:Init()
+        end
+        if (type(tbl.Start) == "function" and not tbl.__aeroPreventStart) then
+            AeroServer:RunAsync(tbl.Start, tbl, "Wrapped Module")
+        end
     end
 end
 
@@ -260,14 +263,14 @@ local function RegisterDependencies(instance, moduleType)
     -- Parse table
     if isTable then
         for k, v in pairs(instance) do
-            RegisterDependencies(v)
+            RegisterDependencies(v, moduleType)
         end
     end
 
     -- Parse folder
     if isFolder then
         for k, v in pairs(instance:GetChildren()) do
-            RegisterDependencies(v)
+            RegisterDependencies(v, moduleType)
         end
     end
 
@@ -285,6 +288,7 @@ local function RegisterDependencies(instance, moduleType)
         local status, requiredScript = pcall(function()
             local obj = require(instance)
             if (type(obj) == "table") then
+                AeroServer:WrapModule(obj, true)
                 return obj
             end
             return obj
@@ -311,7 +315,7 @@ local function InitServices()
     local services = {}
     for name, data in pairs(required) do
         if data.Type == "Service" then
-            table.insert(services, data)
+            services[name] = data
         end
     end
 
@@ -368,7 +372,7 @@ local function InitScripts()
     local scripts = {}
     for name, data in pairs(required) do
         if data.Type == "Script" then
-            table.insert(scripts, data)
+            scripts[name] = data
         end
     end
 
