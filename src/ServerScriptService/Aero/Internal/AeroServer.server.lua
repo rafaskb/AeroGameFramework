@@ -3,10 +3,6 @@
 ---
 local AeroServer = {
     Loaded = false;
-    Services = {};
-    Modules = {};
-    Scripts = {};
-    Shared = {};
     Events = {};
     ClientEvents = {};
 }
@@ -17,9 +13,10 @@ local servicesFolders = {}
 local modulesFolders = {}
 local scriptsFolders = {}
 local sharedFolders = {}
+local required = {}
 
----@type ParamUtil
-local ParamUtil
+local ParamUtil  ---@type ParamUtil
+local Event      ---@type Event
 
 local remoteServices = Instance.new("Folder")
 remoteServices.Name = "AeroRemoteServices"
@@ -32,7 +29,25 @@ remoteServices.Parent = game:GetService("ReplicatedStorage")
 ---@return T
 ---
 function AeroServer:Require(name)
-    return self.Services[name] or self.Modules[name] or self.Scrips[name] or self.Shared[name]
+    local result = required[name]
+
+    -- Error - Module not found
+    if not result then
+        error("Failed to require dependency called \"" .. tostring(name) .. "\".", 1)
+    end
+
+    -- Init module if necessary
+    if not result.Init then
+        local status, err = pcall(function()
+            AeroServer:WrapModule(result.Module)
+        end)
+        if not status then
+            error("Failed to require dependency called \"" .. tostring(name) .. "\": " .. tostring(err), 1)
+        end
+    end
+
+    -- Return module
+    return result.Module
 end
 
 ---
@@ -42,7 +57,7 @@ end
 ---
 function AeroServer:RegisterEvent(eventName)
     assert(not AeroServer.Events[eventName], string.format("The event name '%s' is already registered.", eventName))
-    local event = self.Shared.Event.new()
+    local event = Event.new()
     AeroServer.Events[eventName] = event
     return event
 end
@@ -229,161 +244,154 @@ function AeroServer:WrapModule(tbl)
     end
 end
 
-local function LoadModuleRecursively(module, loadFunc)
-    if module:IsA("ModuleScript") then
-        local success, err = pcall(function()
-            loadFunc(module)
-        end)
-        if not success then
-            warn("[AeroServer] Error loading module " .. tostring(module) .. ": " .. tostring(err))
-        end
-    elseif module:IsA("Folder") then
-        for _, child in pairs(module:GetChildren()) do
-            LoadModuleRecursively(child, loadFunc)
+---
+---Registers a dependency to this framework, so it can be loaded with Require later.
+---@param instance table|Folder|ModuleScript Instance to register.
+---@param moduleType string Type of the module
+---
+local function RegisterDependencies(instance, moduleType)
+    -- Get type
+    local instanceType = string.lower(typeof(instance))
+    local isTable = instanceType == "table"
+    local isInstance = not isTable and instanceType == "instance"
+    local isFolder = isInstance and instance:IsA("Folder")
+    local isScript = isInstance and instance:IsA("ModuleScript")
+
+    -- Parse table
+    if isTable then
+        for k, v in pairs(instance) do
+            RegisterDependencies(v)
         end
     end
-end
 
--- Setup table to load modules on demand:
-local function LazyLoadSetup(tbl, folderArray, recursive)
-    setmetatable(tbl, {
-        __index = function(t, i)
-            local rawObj
-            for _, folder in pairs(folderArray) do
-                rawObj = folder:FindFirstChild(i)
-                if rawObj ~= nil then
-                    break
-                end
-            end
+    -- Parse folder
+    if isFolder then
+        for k, v in pairs(instance:GetChildren()) do
+            RegisterDependencies(v)
+        end
+    end
 
-            local status, obj = pcall(function()
-                local obj = require(rawObj)
-                if (type(obj) == "table") then
-                    AeroServer:WrapModule(obj)
-                end
+    -- Register script
+    if isScript then
+
+        -- Error - There's already a module registered with that name
+        local name = instance.Name
+        if required[name] then
+            warn("[AeroServer] There is already a module registered with the same name: " .. tostring(name))
+            return
+        end
+
+        -- Require and wrap script
+        local status, requiredScript = pcall(function()
+            local obj = require(instance)
+            if (type(obj) == "table") then
                 return obj
-            end)
-
-            if not status then
-                if recursive then
-                    local name = tostring(rawObj)
-                    local childTable = {}
-                    tbl[name] = childTable
-                    LazyLoadSetup(childTable, rawObj)
-                    rawset(t, i, childTable)
-                    obj = childTable
-                else
-                    error("Attempted to index nil value: " .. i)
-                end
             end
-
-            rawset(t, i, obj)
             return obj
-        end;
-    })
-end
+        end)
 
-
--- Load service from module:
-local function LoadService(module)
-    local remoteFolder = Instance.new("Folder")
-    remoteFolder.Name = module.Name
-    remoteFolder.Parent = remoteServices
-
-    local service = require(module)
-    AeroServer.Services[module.Name] = service
-
-    if (type(service.Client) ~= "table") then
-        service.Client = {}
-    end
-    service.Client.Server = service
-
-    setmetatable(service, mt)
-
-    service._remoteFolder = remoteFolder
-
-end
-
-local function InitService(service, name)
-
-    -- Initialize:
-    if (type(service.Init) == "function") then
-        service:Init()
-    end
-
-    -- Client functions:
-    for funcName, func in pairs(service.Client) do
-        if (type(func) == "function") then
-            service:RegisterClientFunction(funcName, func)
+        -- Error - Failed to load dependency
+        if not status then
+            local err = tostring(requiredScript)
+            warn("[AeroServer] Failed to register dependency: " .. tostring(instance:GetFullName() .. ". Error: " .. err))
+            return
         end
-    end
-end
 
-local function StartService(service, name)
-    if (type(service.Start) == "function") then
-        AeroServer:RunAsync(service.Start, service, name)
-    end
-end
-
-
--- Load script from module:
-local function LoadScript(module)
-
-    local serverScript = require(module)
-    AeroServer.Scripts[module.Name] = serverScript
-
-    setmetatable(serverScript, mt)
-
-end
-
-local function InitScript(serverScript, name)
-
-    -- Initialize:
-    if (type(serverScript.Init) == "function") then
-        serverScript:Init()
-    end
-
-end
-
-local function StartScript(serverScript, name)
-
-    -- Start scripts on separate threads:
-    if (type(serverScript.Start) == "function") then
-        AeroServer:RunAsync(serverScript.Start, serverScript, name)
+        -- Register
+        required[name] = {
+            Module = requiredScript;
+            Type = moduleType;
+            Init = false;
+        }
     end
 end
 
 local function InitServices()
-    -- Load service modules:
-    for _, servicesFolder in pairs(servicesFolders) do
-        LoadModuleRecursively(servicesFolder, LoadService)
+    -- Collect services
+    local services = {}
+    for name, data in pairs(required) do
+        if data.Type == "Service" then
+            table.insert(services, data)
+        end
+    end
+
+    -- Create client data:
+    for name, data in pairs(services) do
+        local service = data.Module
+
+        -- Create remote folders
+        local remoteFolder = Instance.new("Folder")
+        remoteFolder.Name = name
+        remoteFolder.Parent = remoteServices
+
+        -- Create client table
+        if (type(service.Client) ~= "table") then
+            service.Client = {}
+        end
+        service.Client.Server = service
+
+        -- Set remote folder
+        service._remoteFolder = remoteFolder
     end
 
     -- Initialize services:
-    for name, service in pairs(AeroServer.Services) do
-        InitService(service, name)
+    for name, data in pairs(services) do
+        local service = data.Module
+
+        -- Init
+        if (type(service.Init) == "function") then
+            service:Init()
+        end
+
+        -- Register client functions
+        for funcName, func in pairs(service.Client) do
+            if (type(func) == "function") then
+                service:RegisterClientFunction(funcName, func)
+            end
+        end
+
+        -- Mark module as init
+        data.Init = true
     end
 
     -- Start services:
-    for name, service in pairs(AeroServer.Services) do
-        StartService(service, name)
+    for name, data in pairs(services) do
+        local service = data.Module
+        if (type(service.Start) == "function") then
+            AeroServer:RunAsync(service.Start, service, name)
+        end
     end
 end
 
 local function InitScripts()
-    -- Load script modules:
-    for _, scriptsFolder in pairs(scriptsFolders) do
-        LoadModuleRecursively(scriptsFolder, LoadScript)
+    -- Collect scripts
+    local scripts = {}
+    for name, data in pairs(required) do
+        if data.Type == "Script" then
+            table.insert(scripts, data)
+        end
     end
 
     -- Initialize scripts:
-    for name, serverScript in pairs(AeroServer.Scripts) do
-        InitScript(serverScript, name)
+    for name, data in pairs(scripts) do
+        local script = data.Module
+
+        -- Init
+        if (type(script.Init) == "function") then
+            script:Init()
+        end
+
+        -- Mark module as init
+        data.Init = true
     end
 
     -- Start scripts:
-    for name, serverScript in pairs(AeroServer.Scripts) do
-        StartScript(serverScript, name)
+    for name, data in pairs(scripts) do
+        local script = data.Module
+
+        if (type(script.Start) == "function") then
+            AeroServer:RunAsync(script.Start, script, name)
+        end
     end
 end
 
@@ -428,13 +436,15 @@ local function Init()
     -- Fetch folders
     FetchFolders()
 
-    -- Lazy-load server and shared modules:
-    LazyLoadSetup(AeroServer.Modules, modulesFolders, true)
-    LazyLoadSetup(AeroServer.Shared, sharedFolders, true)
-    LazyLoadSetup(AeroServer.Scripts, scriptsFolders, true)
+    -- Require lazy dependencies
+    RegisterDependencies(modulesFolders, "Module")
+    RegisterDependencies(sharedFolders, "Shared")
+    RegisterDependencies(scriptsFolders, "Script")
+    RegisterDependencies(servicesFolders, "Service")
 
     -- Init dependencies
-    ParamUtil = AeroServer.Shared.ParamUtil
+    ParamUtil = AeroServer:Require("ParamUtil")
+    Event = AeroServer:Require("Event")
 
     -- Init services and scripts
     InitServices()

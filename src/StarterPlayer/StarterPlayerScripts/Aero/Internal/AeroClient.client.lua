@@ -3,11 +3,6 @@
 ---
 local AeroClient = {
     Loaded = false;
-    Controllers = {};
-    Modules = {};
-    Scripts = {};
-    Shared = {};
-    Services = {};
     Events = {};
     ServiceEvents = {};
     Player = game:GetService("Players").LocalPlayer;
@@ -19,9 +14,10 @@ local controllersFolders = {}
 local modulesFolders = {}
 local scriptsFolders = {}
 local sharedFolders = {}
+local required = {}
 
----@type ParamUtil
-local ParamUtil
+local ParamUtil ---@type ParamUtil
+local Event ---@type Event
 
 ---
 ---Requires a dependency by its name. It can be a module, script, service, all kinds of dependencies will be checked.
@@ -30,7 +26,25 @@ local ParamUtil
 ---@return T
 ---
 function AeroClient:Require(name)
-    return self.Controllers[name] or self.Modules[name] or self.Scrips[name] or self.Shared[name] or self.Services[name]
+    local result = required[name]
+
+    -- Error - Module not found
+    if not result then
+        error("Failed to require dependency called \"" .. tostring(name) .. "\".", 1)
+    end
+
+    -- Init module if necessary
+    if not result.Init then
+        local status, err = pcall(function()
+            AeroClient:WrapModule(result.Module)
+        end)
+        if not status then
+            error("Failed to require dependency called \"" .. tostring(name) .. "\": " .. tostring(err), 1)
+        end
+    end
+
+    -- Return module
+    return result.Module
 end
 
 ---
@@ -40,8 +54,7 @@ end
 ---
 function AeroClient:RegisterEvent(eventName)
     assert(not AeroClient.Events[eventName], string.format("The event name '%s' is already registered.", eventName))
-
-    local event = self.Shared.Event.new()
+    local event = Event.new()
     AeroClient.Events[eventName] = event
     return event
 end
@@ -158,27 +171,83 @@ function AeroClient:WrapModule(tbl)
     end
 end
 
-local function LoadModuleRecursively(module, loadFunc)
-    if module:IsA("ModuleScript") then
-        local success, err = pcall(function()
-            loadFunc(module)
+---
+---Registers a dependency to this framework, so it can be loaded with Require later.
+---@param instance table|Folder|ModuleScript Instance to register.
+---@param moduleType string Type of the module
+---
+local function RegisterDependencies(instance, moduleType)
+    -- Get type
+    local instanceType = string.lower(typeof(instance))
+    local isTable = instanceType == "table"
+    local isInstance = not isTable and instanceType == "instance"
+    local isFolder = isInstance and instance:IsA("Folder")
+    local isScript = isInstance and instance:IsA("ModuleScript")
+
+    -- Parse table
+    if isTable then
+        for k, v in pairs(instance) do
+            RegisterDependencies(v)
+        end
+    end
+
+    -- Parse folder
+    if isFolder then
+        for k, v in pairs(instance:GetChildren()) do
+            RegisterDependencies(v)
+        end
+    end
+
+    -- Register script
+    if isScript then
+
+        -- Error - There's already a module registered with that name
+        local name = instance.Name
+        if required[name] then
+            warn("[AeroClient] There is already a module registered with the same name: " .. tostring(name))
+            return
+        end
+
+        -- Require and wrap script
+        local status, requiredScript = pcall(function()
+            local obj = require(instance)
+            if (type(obj) == "table") then
+                return obj
+            end
+            return obj
         end)
-        if not success then
-            warn("[AeroClient] Error loading module " .. tostring(module) .. ": " .. tostring(err))
+
+        -- Error - Failed to load dependency
+        if not status then
+            local err = tostring(requiredScript)
+            warn("[AeroClient] Failed to register dependency: " .. tostring(instance:GetFullName() .. ". Error: " .. err))
+            return
         end
-    elseif module:IsA("Folder") then
-        for _, child in pairs(module:GetChildren()) do
-            LoadModuleRecursively(child, loadFunc)
-        end
+
+        -- Register
+        required[name] = {
+            Module = requiredScript;
+            Type = moduleType;
+            Init = false;
+        }
     end
 end
 
 local function LoadService(serviceFolder)
+    local name = module.Name
+    if required[name] then
+        warn("[AeroClient] There is already a module registered with the same name: " .. tostring(name))
+        return
+    end
+
     local service = {}
-    AeroClient.Services[serviceFolder.Name] = service
+    required[name] = {
+        Module = service;
+        Init = false;
+    }
     for _, v in pairs(serviceFolder:GetChildren()) do
         if (v:IsA("RemoteEvent")) then
-            local event = AeroClient.Shared.Event.new()
+            local event = Event.new()
             local fireEvent = event.Fire
             function event:Fire(...)
                 local success, err = ParamUtil:IsValidForNetworking({ ... })
@@ -215,116 +284,67 @@ local function LoadServices()
     end
 end
 
-
--- Setup table to load modules on demand:
-local function LazyLoadSetup(tbl, folderArray, recursive)
-    setmetatable(tbl, {
-        __index = function(t, i)
-            local rawObj
-            for _, folder in pairs(folderArray) do
-                rawObj = folder:FindFirstChild(i)
-                if rawObj ~= nil then
-                    break
-                end
-            end
-
-            local status, obj = pcall(function()
-                local obj = require(rawObj)
-                if (type(obj) == "table") then
-                    AeroClient:WrapModule(obj)
-                end
-                return obj
-            end)
-
-            if not status then
-                if recursive then
-                    local name = tostring(rawObj)
-                    local childTable = {}
-                    tbl[name] = childTable
-                    LazyLoadSetup(childTable, rawObj)
-                    rawset(t, i, childTable)
-                    obj = childTable
-                else
-                    error("Attempted to index nil value: " .. i)
-                end
-            end
-
-            rawset(t, i, obj)
-            return obj
-        end;
-    })
-end
-
-local function LoadController(module)
-    local controller = require(module)
-    AeroClient.Controllers[module.Name] = controller
-    setmetatable(controller, mt)
-end
-
-local function InitController(controller, name)
-    if (type(controller.Init) == "function") then
-        controller:Init()
-    end
-end
-
-local function StartController(controller, name)
-    -- Start controllers on separate threads:
-    if (type(controller.Start) == "function") then
-        AeroClient:RunAsync(controller.Start, controller, name)
-    end
-end
-
-local function LoadScript(module)
-    local clientScript = require(module)
-    AeroClient.Scripts[module.Name] = clientScript
-    setmetatable(clientScript, mt)
-end
-
-local function InitScript(clientScript, name)
-    if (type(clientScript.Init) == "function") then
-        clientScript:Init()
-    end
-end
-
-local function StartScript(clientScript, name)
-
-    -- Start scripts on separate threads:
-    if (type(clientScript.Start) == "function") then
-        AeroClient:RunAsync(clientScript.Start, clientScript, name)
-    end
-end
-
 local function InitControllers()
-    -- Load service modules:
-    for _, controllersFolder in pairs(controllersFolders) do
-        LoadModuleRecursively(controllersFolder, LoadController)
+    -- Collect controllers
+    local controllers = {}
+    for name, data in pairs(required) do
+        if data.Type == "Controller" then
+            table.insert(controllers, data)
+        end
     end
 
     -- Initialize controllers:
-    for name, controller in pairs(AeroClient.Controllers) do
-        InitController(controller, name)
+    for name, data in pairs(controllers) do
+        local controller = data.Module
+
+        -- Init
+        if (type(controller.Init) == "function") then
+            controller:Init()
+        end
+
+        -- Mark module as init
+        data.Init = true
     end
 
     -- Start controllers:
-    for name, controller in pairs(AeroClient.Controllers) do
-        StartController(controller, name)
+    for name, data in pairs(controllers) do
+        local controller = data.Module
+
+        if (type(controller.Start) == "function") then
+            AeroClient:RunAsync(controller.Start, controller, name)
+        end
     end
 end
 
 local function InitScripts()
-    -- Load script modules:
-    for _, scriptsFolder in pairs(scriptsFolders) do
-        LoadModuleRecursively(scriptsFolder, LoadScript)
+    -- Collect scripts
+    local scripts = {}
+    for name, data in pairs(required) do
+        if data.Type == "Script" then
+            table.insert(scripts, data)
+        end
     end
 
     -- Initialize scripts:
-    for name, clientScript in pairs(AeroClient.Scripts) do
-        InitScript(clientScript, name)
+    for name, data in pairs(scripts) do
+        local script = data.Module
+
+        -- Init
+        if (type(script.Init) == "function") then
+            script:Init()
+        end
+
+        -- Mark module as init
+        data.Init = true
     end
 
     -- Start scripts:
-    for name, clientScript in pairs(AeroClient.Scripts) do
-        StartScript(clientScript, name)
+    for name, data in pairs(scripts) do
+        local script = data.Module
+
+        if (type(script.Start) == "function") then
+            AeroClient:RunAsync(script.Start, script, name)
+        end
     end
 end
 
@@ -369,13 +389,15 @@ local function Init()
     -- Fetch folders
     FetchFolders()
 
-    -- Lazy load modules:
-    LazyLoadSetup(AeroClient.Modules, modulesFolders, true)
-    LazyLoadSetup(AeroClient.Shared, sharedFolders, true)
-    LazyLoadSetup(AeroClient.Scripts, scriptsFolders, true)
+    -- Require lazy dependencies
+    RegisterDependencies(modulesFolders, "Module")
+    RegisterDependencies(sharedFolders, "Shared")
+    RegisterDependencies(scriptsFolders, "Script")
+    RegisterDependencies(controllersFolders, "Controller")
 
     -- Init dependencies
-    ParamUtil = AeroClient.Shared.ParamUtil
+    ParamUtil = AeroClient:Require("ParamUtil")
+    Event = AeroClient:Require("Event")
 
     -- Load server-side services:
     LoadServices()
