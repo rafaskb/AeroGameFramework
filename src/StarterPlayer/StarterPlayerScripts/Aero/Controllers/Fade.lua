@@ -279,7 +279,7 @@ end
 
 
 function Fade:Init()
-	Tween = self.Modules.Tween
+	Tween = self:Require("Tween")
 	self:RegisterEvent(fadeStartedEvent)
 	self:RegisterEvent(fadeEndedEvent)
 end

@@ -112,7 +112,7 @@ This can be useful if you are requiring other non-framework modules in which you
 #### Invoking another controller:
 ```lua
 function MyController:Start()
-	local fade = self.Controllers.Fade
+	local fade = self:Require("Fade")
 	fade:SetText("Fade Example")
 	fade:Out()
 	wait(1)
@@ -124,7 +124,7 @@ end
 ```lua
 function MyController:Start()
 	-- Get pints:
-	local pointsService = self.Services.PointsService
+	local pointsService = self:Require("PointsService")
 	local points = pointsService:GetPoints()
 	print("Points:", points)
 end
@@ -133,7 +133,7 @@ end
 #### Using a module:
 ```lua
 function MyController:Start()
-	local someModule = self.Modules.SomeModule
+	local someModule = self:Require("SomeModule")
 	someModule:DoSomething()
 end
 ```
@@ -142,7 +142,7 @@ end
 ```lua
 function MyController:Start()
 	-- Print the current date:
-	local Date = self.Shared.Date
+	local Date = self:Require("Date")
 	local now = Date.new()
 	print("Now", now)
 end
@@ -151,7 +151,7 @@ end
 #### Connecting to a service event:
 ```lua
 function MyController:Start()
-	local dataService = self.Services.DataService
+	local dataService = self:Require("DataService")
 	dataService.Failed:Connect(function(method, key, errorMessage)
 		warn("DataService failed:", method, key, errorMessage)
 	end)

@@ -50,12 +50,13 @@ end
 
 
 function Mobile:Init()
-	
-	self.TouchStarted    = self.Shared.Event.new()
-	self.TouchEnded      = self.Shared.Event.new()
-	self.TouchMoved      = self.Shared.Event.new()
-	self.TouchTapInWorld = self.Shared.Event.new()
-	self.TouchPinch      = self.Shared.Event.new()
+	local Event = self:Require("Event")
+
+	self.TouchStarted    = Event.new()
+	self.TouchEnded      = Event.new()
+	self.TouchMoved      = Event.new()
+	self.TouchTapInWorld = Event.new()
+	self.TouchPinch      = Event.new()
 	
 	userInput.TouchStarted:Connect(function(input, processed)
 		if (processed) then return end

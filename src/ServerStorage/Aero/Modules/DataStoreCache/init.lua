@@ -41,7 +41,7 @@ function Cache.new(name, scope)
 		Lock = false; -- Don't allow flushing if 'true'
 	}, Cache)
 
-	self.Failed = self.Shared.Event.new()
+	self.Failed = self:Require("Event").new()
 
 	if (self.DataStore) then
 		self._dsFailed = self.DataStore.Failed:Connect(function(method, key, errMsg)
@@ -157,7 +157,7 @@ end
 
 
 function Cache:Start()
-	ParamUtil = self.Shared.ParamUtil
+	ParamUtil = self:Require("ParamUtil")
 end
 
 function Cache:Init()

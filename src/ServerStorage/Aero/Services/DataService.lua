@@ -333,7 +333,7 @@ function DataService:Init()
 	self:RegisterEvent(CUSTOM_FAILED_EVENT)
 	self:RegisterClientEvent(CLIENT_FAILED_EVENT)
 
-	Cache = self.Modules.DataStoreCache
+	Cache = self:Require("DataStoreCache")
 
 	globalCache = Cache.new("global", "global")
 	globalCache.Failed:Connect(function(method, key, errMsg)

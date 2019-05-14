@@ -45,7 +45,7 @@ function SafeDataStore.new(name, scope)
 		DataStore = dataStoreService:GetDataStore(name, scope);
 	}, SafeDataStore)
 
-	self.Failed = self.Shared.Event.new()
+	self.Failed = self:Require("Event").new()
 	
 	return self
 	

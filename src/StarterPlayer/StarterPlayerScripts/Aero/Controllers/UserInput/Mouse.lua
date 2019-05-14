@@ -107,15 +107,16 @@ end
 
 
 function Mouse:Init()
-	
-	self.LeftDown   = self.Shared.Event.new()
-	self.LeftUp     = self.Shared.Event.new()
-	self.RightDown  = self.Shared.Event.new()
-	self.RightUp    = self.Shared.Event.new()
-	self.MiddleDown = self.Shared.Event.new()
-	self.MiddleUp   = self.Shared.Event.new()
-	self.Moved      = self.Shared.Event.new()
-	self.Scrolled   = self.Shared.Event.new()
+	local Event = self:Require("Event")
+
+	self.LeftDown   = Event.new()
+	self.LeftUp     = Event.new()
+	self.RightDown  = Event.new()
+	self.RightUp    = Event.new()
+	self.MiddleDown = Event.new()
+	self.MiddleUp   = Event.new()
+	self.Moved      = Event.new()
+	self.Scrolled   = Event.new()
 	
 	userInput.InputBegan:Connect(function(input, processed)
 		if (processed) then return end

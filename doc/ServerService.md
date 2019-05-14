@@ -161,7 +161,7 @@ end
 ```lua
 function MyService:Start()
 	-- Get some global data from the DataService:
-	local dataService = self.Services.DataService
+	local dataService = self:Require("DataService")
 	local data = dataService:GetGlobal("Test")
 end
 ```
@@ -169,7 +169,7 @@ end
 #### Using a Module:
 ```lua
 function MyService:Start()
-	local someModule = self.Modules.SomeModule
+	local someModule = self:Require("SomeModule")
 	someModule:DoSomething()
 end
 ```
@@ -178,7 +178,7 @@ end
 ```lua
 function MyService:Start()
 	-- Print the current date:
-	local Date = self.Shared.Date
+	local Date = self:Require("Date")
 	local now = Date.new()
 	print("Now", now)
 end

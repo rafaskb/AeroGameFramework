@@ -51,9 +51,9 @@ end
 
 
 function Keyboard:Init()
-	
-	self.KeyDown = self.Shared.Event.new()
-	self.KeyUp = self.Shared.Event.new()
+	local Event = self:Require("Event")
+	self.KeyDown = Event.new()
+	self.KeyUp = Event.new()
 	
 	userInput.InputBegan:Connect(function(input, processed)
 		if (processed) then return end

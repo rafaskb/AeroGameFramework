@@ -48,14 +48,17 @@ function Gamepad.new(gamepad)
 		_state = {};
 		_isConnected = false;
 	}, Gamepad)
+
+	local Event = self:Require("Event")
+	local ListenerList = self:Require("ListenerList")
+
+	self.ButtonDown   = Event.new()
+	self.ButtonUp     = Event.new()
+	self.Changed      = Event.new()
+	self.Connected    = Event.new()
+	self.Disconnected = Event.new()
 	
-	self.ButtonDown   = self.Shared.Event.new()
-	self.ButtonUp     = self.Shared.Event.new()
-	self.Changed      = self.Shared.Event.new()
-	self.Connected    = self.Shared.Event.new()
-	self.Disconnected = self.Shared.Event.new()
-	
-	self._listeners = self.Shared.ListenerList.new()
+	self._listeners = ListenerList.new()
 	
 	if (userInput:GetGamepadConnected(gamepad)) then
 		self._isConnected = true

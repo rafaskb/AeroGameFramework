@@ -43,7 +43,7 @@ while (not _G.Aero) do wait() end
 local aero = _G.Aero
 
 -- Make screen black using the Aero Fade module:
-aero.Controllers.Fade:Out(0)
+aero:Require("Fade"):Out(0)
 
 -- Remove the temporary overlay, since we don't need it anymore:
 tempBlackout:Destroy()
@@ -53,7 +53,7 @@ local loadingGui = script.YOUR_CUSTOM_GUI
 loadingGui.Parent = player:WaitForChild("PlayerGui")
 
 -- Fade in slowly to show your loading screen:
-aero.Controllers.Fade:In(1)
+aero:Require("Fade"):In(1)
 
 -- Wait for the game to load if not loaded yet:
 if (not game:IsLoaded()) then
@@ -65,8 +65,8 @@ end
 
 -- Fade out to black, remove your GUI, and then fade back in:
 wait(3)
-aero.Controllers.Fade:Out(1)
+aero:Require("Fade"):Out(1)
 loadingGui:Destroy()
-aero.Controllers.Fade:In(1)
+aero:Require("Fade"):In(1)
 
 ]]

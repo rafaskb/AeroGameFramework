@@ -158,7 +158,7 @@ end
 
 function AnotherService:Init()
   -- Reference the TestService:
-  testService = self.Services.TestService
+  testService = self:Require("TestService")
 end
 
 return AnotherService
@@ -272,14 +272,14 @@ end
 function SomeController:Start()
 
   -- Connect to server event:
-  self.Services.MyService.HelloClient:Connect(function(msg)
+  self:Require("MyService").HelloClient:Connect(function(msg)
     print(msg)
     -- Fire event back to server:
-    self.Services.MyService.HelloClient:Fire("Hello to you too!")
+    self:Require("MyService").HelloClient:Fire("Hello to you too!")
   end)
   
   -- Fire server method:
-  local msg = self.Services.MyService:Hello("Hi there")
+  local msg = self:Require("MyService"):Hello("Hi there")
   print(msg)
   
 end
@@ -308,7 +308,7 @@ end
 
 function MyController:Init()
   -- Reference the other controller:
-  someController = self.Controllers.SomeController
+  someController = self:Require("SomeController")
 end
 
 return MyController
@@ -322,7 +322,7 @@ In certain circumstances, you may want to access the framework from code executi
 while (not _G.Aero or not _G.Aero.Loaded) do wait() end
 local aero = _G.Aero
 
-aero.Services.SomeService:DoSomething()
+aero:Require("SomeService"):DoSomething()
 ```
 
 ### Client Global Example
@@ -330,8 +330,8 @@ aero.Services.SomeService:DoSomething()
 while (not _G.Aero or not _G.Aero.Loaded) do wait() end
 local aero = _G.Aero
 
-aero.Controllers.Fade:In()
-aero.Services.TestService:Hello()
+aero:Require("Fade"):In()
+aero:Require("TestService"):Hello()
 ```
 
 # Internal
