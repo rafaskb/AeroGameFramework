@@ -33,7 +33,7 @@ function AeroServer:Require(name)
 
     -- Error - Module not found
     if not result then
-        error("Failed to require dependency called \"" .. tostring(name) .. "\".", 1)
+        error("Failed to require dependency called \"" .. tostring(name) .. "\".", 2)
     end
 
     -- Init module if necessary
@@ -42,7 +42,7 @@ function AeroServer:Require(name)
             AeroServer:WrapModule(result.Module)
         end)
         if not status then
-            error("Failed to require dependency called \"" .. tostring(name) .. "\": " .. tostring(err), 1)
+            error("Failed to require dependency called \"" .. tostring(name) .. "\": " .. tostring(err), 2)
         end
     end
 
@@ -96,7 +96,7 @@ function AeroServer:FireClientEvent(eventName, client, ...)
     assert(AeroServer.ClientEvents[eventName], string.format("The event name '%s' is not registered.", eventName))
     local success, err = ParamUtil:IsValidForNetworking({ ... })
     if not success then
-        error("Error while firing event to client: " .. err, 1)
+        error("Error while firing event to client: " .. err, 2)
     end
     AeroServer.ClientEvents[eventName]:FireClient(client, ...)
 end
@@ -110,7 +110,7 @@ function AeroServer:FireAllClientsEvent(eventName, ...)
     assert(AeroServer.ClientEvents[eventName], string.format("The event name '%s' is not registered.", eventName))
     local success, err = ParamUtil:IsValidForNetworking({ ... })
     if not success then
-        error("Error while firing event to client: " .. err, 1)
+        error("Error while firing event to client: " .. err, 2)
     end
     AeroServer.ClientEvents[eventName]:FireAllClients(...)
 end

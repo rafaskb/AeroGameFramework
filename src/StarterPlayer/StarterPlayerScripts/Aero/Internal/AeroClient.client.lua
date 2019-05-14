@@ -30,7 +30,7 @@ function AeroClient:Require(name)
 
     -- Error - Module not found
     if not result then
-        error("Failed to require dependency called \"" .. tostring(name) .. "\".", 1)
+        error("Failed to require dependency called \"" .. tostring(name) .. "\".", 2)
     end
 
     -- Init module if necessary
@@ -39,7 +39,7 @@ function AeroClient:Require(name)
             AeroClient:WrapModule(result.Module)
         end)
         if not status then
-            error("Failed to require dependency called \"" .. tostring(name) .. "\": " .. tostring(err), 1)
+            error("Failed to require dependency called \"" .. tostring(name) .. "\": " .. tostring(err), 2)
         end
     end
 
@@ -252,7 +252,7 @@ local function LoadService(serviceFolder)
             function event:Fire(...)
                 local success, err = ParamUtil:IsValidForNetworking({ ... })
                 if not success then
-                    error("Error while firing event to server: " .. err, 1)
+                    error("Error while firing event to server: " .. err, 2)
                 end
                 v:FireServer(...)
             end
@@ -265,7 +265,7 @@ local function LoadService(serviceFolder)
             local func = function(self, ...)
                 local success, err = ParamUtil:IsValidForNetworking({ ... })
                 if not success then
-                    error("Error while firing event to server: " .. err, 1)
+                    error("Error while firing event to server: " .. err, 2)
                 end
                 return v:InvokeServer(...)
             end
