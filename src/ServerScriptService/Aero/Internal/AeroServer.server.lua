@@ -400,32 +400,38 @@ local function InitScripts()
 end
 
 local function FetchFolders()
+    local folderTablesByName = {
+        Scripts = scriptsFolders;
+        Services = servicesFolders;
+        Modules = modulesFolders;
+        Shared = sharedFolders;
+    }
+
     local function isAeroFolder(folder)
         if folder:IsA("Folder") then
-            if folder.Name == "Aero" then
-                return true
-            end
-            local aeroFolderValue = folder:FindFirstChild("AeroFolder")
-            if aeroFolderValue and aeroFolderValue.Value then
-                return true
+            if folderTablesByName[folder.Name] then
+                local ignoreAeroValue = folder:FindFirstChild("IgnoreAero")
+                if not ignoreAeroValue or not ignoreAeroValue.Value then
+                    return true
+                end
             end
         end
         return false
     end
 
     local serverSourceFolder = game:GetService("ServerStorage"):WaitForChild("Source")
-    for _, child in pairs(serverSourceFolder:GetChildren()) do
+    for _, child in pairs(serverSourceFolder:GetDescendants()) do
         if isAeroFolder(child) then
-            table.insert(servicesFolders, child:FindFirstChild("Services"))
-            table.insert(modulesFolders, child:FindFirstChild("Modules"))
-            table.insert(scriptsFolders, child:FindFirstChild("Scripts"))
+            local folderTable = folderTablesByName[child.Name]
+            table.insert(folderTable, child)
         end
     end
 
     local sharedSourceFolder = game:GetService("ReplicatedStorage"):WaitForChild("Source")
-    for _, child in pairs(sharedSourceFolder:GetChildren()) do
+    for _, child in pairs(sharedSourceFolder:GetDescendants()) do
         if isAeroFolder(child) then
-            table.insert(sharedFolders, child:FindFirstChild("Shared"))
+            local folderTable = folderTablesByName[child.Name]
+            table.insert(folderTable, child)
         end
     end
 end
