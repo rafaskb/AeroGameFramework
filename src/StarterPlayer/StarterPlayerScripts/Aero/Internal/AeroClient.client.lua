@@ -5,6 +5,8 @@ local AeroClient = {
     Loaded = false;
     Events = {};
     ServiceEvents = {};
+
+    ---@type Player
     Player = game:GetService("Players").LocalPlayer;
 }
 
