@@ -94,7 +94,17 @@ end
 ---@param eventName string
 ---
 function AeroClient:WaitForEvent(eventName)
+    assert(AeroClient.Events[eventName], string.format("The event name '%s' is not registered.", eventName))
     return AeroClient.Events[eventName]:Wait()
+end
+
+---
+---Waits for an event to be fired from the server to this client, yielding the thread.
+---@param eventName string
+---
+function AeroClient:WaitForServiceEvent(eventName)
+    assert(AeroClient.ServiceEvents[eventName], string.format("The service event name '%s' is not registered.", eventName))
+    return AeroClient.ServiceEvents[eventName]:Wait()
 end
 
 ---
