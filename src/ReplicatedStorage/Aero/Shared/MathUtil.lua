@@ -9,6 +9,22 @@
 
 local MathUtil = {}
 
+---
+---Linearly normalizes value from a range. Range must not be empty. This is the inverse of lerp.
+---@param value number Value to normalize.
+---@param rangeStart number Range start normalized to 0.
+---@param rangeEnd number Range end normalized to 1.
+---@param clamp boolean Whether the result should be clamped between 0 and 1.
+---@return number Normalized value.
+---
+function MathUtil:Normalize(value, rangeStart, rangeEnd, clamp)
+    local result = (value - rangeStart) / (rangeEnd - rangeStart)
+    if clamp then
+        result = math.min(1, math.max(0, value))
+    end
+    return result
+end
+
 -- Clamps a value between minimum and maximum boundaries.
 local function Clamp(value, min, max)
     return math.min(max, math.max(min, value))
