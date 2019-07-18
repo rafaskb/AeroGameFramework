@@ -15,9 +15,9 @@ local ParamUtil = {}
 ---@return boolean,string Success flag and error message, if any.
 ---
 function ParamUtil:IsValidForNetworking(instance)
-    local type = string.lower(typeof(instance))
+    local instanceType = string.lower(typeof(instance))
 
-    if type == "table" then
+    if instanceType == "table" then
         -- Check for objects
         if getmetatable(instance) then
             return false, "Parameters cannot have metatables."
@@ -51,7 +51,7 @@ function ParamUtil:IsValidForNetworking(instance)
     end
 
     -- Functions are not allowed.
-    if type == "function" then
+    if instanceType == "function" then
         return false, "Parameters cannot be functions."
     end
 
