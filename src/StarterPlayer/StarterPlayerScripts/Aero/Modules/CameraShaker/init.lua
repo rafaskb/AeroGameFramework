@@ -33,8 +33,21 @@
 		-- Custom shake:
 		camShake:ShakeOnce(3, 1, 0.2, 1.5)
 	
-	
-	
+		wait(1)
+ 		-- Sustained shake:
+		local swayShakeInstance = CameraShaker.Presets.GentleSway
+		camShake:ShakeSustain(swayShakeInstance)
+
+		wait(3)
+ 		-- Sustained shake fadeout:
+		swayShakeInstance:StartFadeOut(3)
+
+		-- "CameraShaker.Presets.GentleSway" or any other preset
+		-- will always return a new ShakeInstance. If you want
+		-- to fade out a previously sustained ShakeInstance, you
+		-- will need to assign it to a variable before sustaining it.
+
+
 	NOTE:
 	
 		This was based entirely on the EZ Camera Shake asset for Unity3D. I was given written
