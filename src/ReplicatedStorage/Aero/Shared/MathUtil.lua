@@ -20,7 +20,7 @@ local MathUtil = {}
 function MathUtil:Normalize(value, rangeStart, rangeEnd, clamp)
     local result = (value - rangeStart) / (rangeEnd - rangeStart)
     if clamp then
-        result = math.min(1, math.max(0, value))
+        result = math.min(1.0, math.max(0.0, result))
     end
     return result
 end
