@@ -40,6 +40,7 @@ function AeroServer:Require(name)
     if not result.Init then
         local status, err = pcall(function()
             AeroServer:WrapModule(result.Module)
+            result.Init = true
         end)
         if not status then
             error("Failed to require dependency called \"" .. tostring(name) .. "\": " .. tostring(err), 2)
