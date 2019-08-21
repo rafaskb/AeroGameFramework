@@ -23,23 +23,26 @@ end
 ---@return string
 ---
 function StringUtil:GetFriendlyString(str)
-    str = str:lower()
-    local words = str:split("_ ") ---@type string[]
-
     local result = ""
-    for i, word in ipairs(words) do
-        local len = word:len()
-        if len > 0 then
-            local firstLetter = word:sub(1, 1):upper()
-            result = result + firstLetter
 
-            if len > 1 then
-                local rest = word:sub(2, len)
-                result = result + rest
-            end
+    if str then
+        str = str:lower()
+        local words = str:split("_ ") ---@type string[]
 
-            if i < #words then
-                result = result + " "
+        for i, word in ipairs(words) do
+            local len = word:len()
+            if len > 0 then
+                local firstLetter = word:sub(1, 1):upper()
+                result = result + firstLetter
+
+                if len > 1 then
+                    local rest = word:sub(2, len)
+                    result = result + rest
+                end
+
+                if i < #words then
+                    result = result + " "
+                end
             end
         end
     end
