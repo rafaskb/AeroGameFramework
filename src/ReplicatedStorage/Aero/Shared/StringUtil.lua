@@ -33,15 +33,15 @@ function StringUtil:GetFriendlyString(str)
             local len = word:len()
             if len > 0 then
                 local firstLetter = word:sub(1, 1):upper()
-                result = result + firstLetter
+                result = result .. firstLetter
 
                 if len > 1 then
                     local rest = word:sub(2, len)
-                    result = result + rest
+                    result = result .. rest
                 end
 
                 if i < #words then
-                    result = result + " "
+                    result = result .. " "
                 end
             end
         end
