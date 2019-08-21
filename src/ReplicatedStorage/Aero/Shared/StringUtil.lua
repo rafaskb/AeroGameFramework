@@ -50,4 +50,28 @@ function StringUtil:GetFriendlyString(str)
     return result
 end
 
+---
+---Splits a string according to the separator and returns a table with the results.
+---
+---@param input string String to be used as source.
+---@param separator string Single character to be used as separator. If nil, any whitespace is used.
+---@param limit number Amount of matches to group. Defaults to infinite.
+---
+---@return string[]
+---
+function StringUtil:Split(input, separator, limit)
+    separator = separator or "%s"
+    limit = limit or -1
+    local t = {}
+    local i = 1
+    for str in string.gmatch(input, "([^" .. separator .. "]+)") do
+        t[i] = str
+        i = i + 1
+        if limit >= 0 and i > limit then
+            break
+        end
+    end
+    return t
+end
+
 return StringUtil
