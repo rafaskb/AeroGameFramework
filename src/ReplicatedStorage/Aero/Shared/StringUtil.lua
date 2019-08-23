@@ -27,7 +27,7 @@ function StringUtil:GetFriendlyString(str)
 
     if str then
         str = str:lower()
-        local words = str:split("_ ") ---@type string[]
+        local words = str:split("_", " ") ---@type string[]
 
         for i, word in ipairs(words) do
             local len = word:len()
