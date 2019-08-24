@@ -186,6 +186,19 @@ local function processRecursive(process, item, path, visited)
     return processed
 end
 
+local default_process = function(item, path)
+    -- Remove metatables
+    if path[#path] == Inspect.METATABLE then
+        return nil
+    end
+
+    -- If objects, return their string versions
+    if type(item) == "table" and item["AssignableFrom"] then
+        return tostring(item)
+    end
+
+    return item
+end
 
 
 -------------------------------------------------------------------
@@ -309,7 +322,7 @@ function Inspect.Inspect(root, options)
     local depth   = options.depth   or 5
     local newline = options.newline or '\n'
     local indent  = options.indent  or '  '
-    local process = options.process
+    local process = options.process or default_process
 
     if process then
         root = processRecursive(process, root, {}, {})
