@@ -10,7 +10,7 @@
 local MathUtil = {}
 
 ---
----Linearly normalizes value from a range. Range must not be empty. This is the inverse of lerp.
+---Linearly normalizes value from a range. Range must not be empty. This is the inverse of lerp. (e.g. a value of 20 with ranges from 10 to 30 will return 0.5)
 ---@param value number Value to normalize.
 ---@param rangeStart number Range start normalized to 0.
 ---@param rangeEnd number Range end normalized to 1.
@@ -21,6 +21,23 @@ function MathUtil:Normalize(value, rangeStart, rangeEnd, clamp)
     local result = (value - rangeStart) / (rangeEnd - rangeStart)
     if clamp then
         result = math.min(1.0, math.max(0.0, result))
+    end
+    return result
+end
+
+---Linearly map a value from one range to another. Input range must not be empty. This is the same as chaining Normalize from input range and Lerp to output range.
+---@param inRangeStart number Input range start
+---@param inRangeEnd number Input range end
+---@param outRangeStart number Output range start
+---@param outRangeEnd number Output range end
+---@param value number Value to map
+---@param clamp boolean Whether or not to clamp the final value within the out range.
+---@return number
+---
+function MathUtil:Map(inRangeStart, inRangeEnd, outRangeStart, outRangeEnd, value, clamp)
+    local result = outRangeStart + (value - inRangeStart) * (outRangeEnd - outRangeStart) / (inRangeEnd - inRangeStart)
+    if clamp then
+        result = math.clamp(result, math.min(outRangeStart, outRangeEnd), math.max(outRangeStart, outRangeEnd))
     end
     return result
 end
