@@ -23,9 +23,8 @@ local Event ---@type Event
 
 ---
 ---Requires a dependency by its name. It can be a module, script, service, all kinds of dependencies will be checked.
----@generic T
 ---@param name string
----@return T
+---@return any
 ---
 function AeroClient:Require(name)
     local result = required[name]

@@ -24,9 +24,8 @@ remoteServices.Parent = game:GetService("ReplicatedStorage")
 
 ---
 ---Requires a dependency by its name. It can be a module, script, service, all kinds of dependencies will be checked.
----@generic T
 ---@param name string
----@return T
+---@return any
 ---
 function AeroServer:Require(name)
     local result = required[name]
