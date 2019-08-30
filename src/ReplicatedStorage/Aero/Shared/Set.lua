@@ -1,27 +1,11 @@
---[[
-
-	Set is a list that only accepts unique values.
-
-
-	REQUIRE:
-
-		local Set = require(thisModule)
-
-
-	CONSTRUCTORS:
-
-        local set = Set.new([values])
-
-
-    METHODS:
-
-        set:Insert(value)
-        set:Remove(value)
-        set:Contains(value)
-        set:InsertValues(values)
-
---]]
-
+---
+---@class Set : any[] Set is a list that only accepts unique values.
+---@field new fun(any[]):Set
+---@field Insert fun(self:Set, value:any):void
+---@field Remove fun(self:Set, value:any):void
+---@field Contains fun(self:Set, value:any):boolean
+---@field InsertValues fun(self:Set, values:any[]):void
+---
 local Set = {}
 
 function Set.new(values)
