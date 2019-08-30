@@ -54,7 +54,7 @@
 --]]
 
 
-
+---@class DataService
 local DataService = {
 	Client = {};
 }
