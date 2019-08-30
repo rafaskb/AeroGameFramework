@@ -65,7 +65,7 @@ end
 ---
 ---Fires an event to this client.
 ---@param eventName string
----@vararg data Multiple parameters are accepted, but usually a table holding all data (recommended).
+---@vararg any Multiple parameters are accepted, but usually a table holding all data (recommended).
 ---
 function AeroClient:FireEvent(eventName, ...)
     assert(AeroClient.Events[eventName], string.format("The event name '%s' is not registered.", eventName))
@@ -130,7 +130,8 @@ end
 ---
 ---Wraps a table as an Aero module, inheriting all Aero functions.
 ---Init and Start functions are automatically called.
----@param tbl table
+---@generic T table
+---@param tbl T
 ---@param skipInit boolean Whether or not initialization functions should be skipped. Defaults to false.
 ---@return T
 ---

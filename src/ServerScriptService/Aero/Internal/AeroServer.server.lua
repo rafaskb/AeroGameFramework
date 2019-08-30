@@ -80,7 +80,7 @@ end
 ---
 ---Fires an event to this server.
 ---@param eventName string
----@vararg data Multiple parameters are accepted, but usually a table holding all data (recommended).
+---@vararg any Multiple parameters are accepted, but usually a table holding all data (recommended).
 ---
 function AeroServer:FireEvent(eventName, ...)
     assert(AeroServer.Events[eventName], string.format("The event name '%s' is not registered.", eventName))
@@ -91,7 +91,7 @@ end
 ---Fires an event to a specific client.
 ---@param eventName string
 ---@param client Player Client receiving the event.
----@vararg data Multiple parameters are accepted, but usually a table holding all data (recommended).
+---@vararg any Multiple parameters are accepted, but usually a table holding all data (recommended).
 ---
 function AeroServer:FireClientEvent(eventName, client, ...)
     assert(AeroServer.ClientEvents[eventName], string.format("The event name '%s' is not registered.", eventName))
@@ -105,7 +105,7 @@ end
 ---
 ---Fires an event to all connected clients at once.
 ---@param eventName string
----@vararg data Multiple parameters are accepted, but usually a table holding all data (recommended).
+---@vararg any Multiple parameters are accepted, but usually a table holding all data (recommended).
 ---
 function AeroServer:FireAllClientsEvent(eventName, ...)
     assert(AeroServer.ClientEvents[eventName], string.format("The event name '%s' is not registered.", eventName))
@@ -191,7 +191,8 @@ end
 ---
 ---Wraps a table as an Aero module, inheriting all Aero functions.
 ---Init and Start functions are automatically called.
----@param tbl table
+---@generic T table
+---@param tbl T
 ---@param skipInit boolean Whether or not initialization functions should be skipped. Defaults to false.
 ---@return T
 ---
