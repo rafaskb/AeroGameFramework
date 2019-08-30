@@ -1,16 +1,12 @@
---[[
-
-	MathUtil.Clamp(value, min, max)
-	MathUtil.NextTriangular(min, max, around)
-	MathUtil.Lerp(from, to, progress)
-	MathUtil.Round(value, bracket, trimDecimals)
-
---]]
-
+---
+---Utility class to help with math operations.
+---@class MathUtil
+---
 local MathUtil = {}
 
 ---
----Linearly normalizes value from a range. Range must not be empty. This is the inverse of lerp. (e.g. a value of 20 with ranges from 10 to 30 will return 0.5)
+---Linearly normalizes value from a range. Range must not be empty. This is the inverse of lerp.
+---Example: function(20, 10, 30) returns 0.5.
 ---@param value number Value to normalize.
 ---@param rangeStart number Range start normalized to 0.
 ---@param rangeEnd number Range end normalized to 1.
@@ -27,6 +23,7 @@ end
 
 ---
 ---Linearly map a value from one range to another. Input range must not be empty. This is the same as chaining Normalize from input range and Lerp to output range.
+---Example: function(20, 10, 30, 50, 100) returns 75.
 ---@param value number Value to map
 ---@param inRangeStart number Input range start
 ---@param inRangeEnd number Input range end
@@ -43,52 +40,78 @@ function MathUtil:Map(value, inRangeStart, inRangeEnd, outRangeStart, outRangeEn
     return result
 end
 
--- Clamps a value between minimum and maximum boundaries.
-local function Clamp(value, min, max)
-    return math.min(max, math.max(min, value))
+---
+---Returns a pseudorandom integer uniformly distributed over [min, max].
+---@param min number
+---@param max number
+---@return number
+---
+function MathUtil:NextNumber(min, max)
+    return self:Lerp(min, max, math.random())
 end
 
--- Returns a triangularly distributed random number between "min" and "max", where values close to the "around" one
--- are more likely to be chosen. In the event that "around" is not between the given boundaries, the result is clamped.
--- @param min The lower limit.
--- @param max The upper limit.
--- @param around The point around which the values are more likely.
-local function NextTriangular(min, max, around)
+---
+---Returns a pseudorandom integer uniformly distributed over [min, max].
+---@param min number
+---@param max number
+---@return number
+---
+function MathUtil:NextInteger(min, max)
+    return self:Round(self:Lerp(min, max, math.random()), 1)
+end
+
+---
+---Returns a triangularly distributed random number between "min" and "max", where values close to the "around" one
+---are more likely to be chosen. In the event that "around" is not between the given boundaries, the result is clamped.
+---@param min number The lower limit.
+---@param max number The upper limit.
+---@param around number The point around which the values are more likely.
+---@return number
+---
+function MathUtil:NextTriangular(min, max, around)
     local u = math.random()
     local d = max - min
+    local r = 0
     if u <= (around - min) / d then
-        return min + math.sqrt(u * d * (around - min))
+        r = min + math.sqrt(u * d * (around - min))
+    else
+        r = max - math.sqrt((1 - u) * d * (max - around))
     end
-    local r = max - math.sqrt((1 - u) * d * (max - around))
-    return Clamp(r, min, max);
+    return math.clamp(r, min, max)
 end
 
--- Returns a linear interpolation between the given boundaries at a certain progress.
-local function Lerp(from, to, progress)
+---
+---Returns a linear interpolation between the given boundaries at a certain progress.
+---@param from number
+---@param to number
+---@param progress number From 0 to 1.
+---@return number
+---
+function MathUtil:Lerp(from, to, progress)
     return from + (to - from) * progress
 end
 
---- Rounds a number according to the given bracket.
 ---
---- Examples:
----     Round(123.456789, 100)   -- 100
----     Round(123.456789, 10)    -- 120
----     Round(123.456789, 1)     -- 123
----     Round(123.456789, 0.1)   -- 123.5
----     Round(123.456789, 0.01)  -- 123.46
----     Round(123.456789, 0.001) -- 123.457
+---Rounds a number according to the given bracket.
 ---
-local function Round(value, bracket)
+---Examples:
+---    Round(123.456789, 100)   -- 100
+---    Round(123.456789, 10)    -- 120
+---    Round(123.456789, 1)     -- 123
+---    Round(123.456789, 0.1)   -- 123.5
+---    Round(123.456789, 0.01)  -- 123.46
+---    Round(123.456789, 0.001) -- 123.457
+---
+---@param value number
+---@param bracket number
+---@return number
+---
+function MathUtil:Round(value, bracket)
     bracket = bracket or 1
     if bracket == 0 then
         bracket = 1
     end
     return math.floor(value / bracket + 0.5) * bracket
 end
-
-MathUtil.Clamp = Clamp
-MathUtil.NextTriangular = NextTriangular
-MathUtil.Lerp = Lerp
-MathUtil.Round = Round
 
 return MathUtil
