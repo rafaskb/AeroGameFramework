@@ -114,4 +114,29 @@ function MathUtil:Round(value, bracket)
     return math.floor(value / bracket + 0.5) * bracket
 end
 
+---
+---Makes a weighted choice based on the given table (keys are entries, values are weights).
+---@generic T
+---@param t table<T,number>
+---@return T
+---
+function MathUtil:WeightedChoice(t)
+    local sum = 0
+    for _, v in pairs(t) do
+        assert(v >= 0, "[MathUtil:WeightedChoice] Weight value cannot be less than zero.")
+        sum = sum + v
+    end
+    assert(sum ~= 0, "[MathUtil:WeightedChoice] The sum of all weights is zero.")
+    local rnd = self:NextNumber(0, sum)
+    local last = nil
+    for k, v in pairs(t) do
+        last = k
+        if rnd < v then
+            return k
+        end
+        rnd = rnd - v
+    end
+    return last
+end
+
 return MathUtil
