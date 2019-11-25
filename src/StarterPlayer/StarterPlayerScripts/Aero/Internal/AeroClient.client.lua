@@ -185,6 +185,8 @@ function AeroClient:WrapModule(tbl, skipInit)
             AeroClient:RunAsync(tbl.Start, tbl, "Wrapped Module")
         end
     end
+
+    return tbl
 end
 
 ---

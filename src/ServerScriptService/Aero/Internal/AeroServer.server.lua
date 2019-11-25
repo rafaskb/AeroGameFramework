@@ -246,6 +246,8 @@ function AeroServer:WrapModule(tbl, skipInit)
             AeroServer:RunAsync(tbl.Start, tbl, "Wrapped Module")
         end
     end
+
+    return tbl
 end
 
 ---
