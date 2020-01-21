@@ -157,7 +157,7 @@
 --]]
 
 
-
+---@class Data
 local Data = {}
 Data.__index = Data
 Data._onCloseHandlers = {}
