@@ -37,19 +37,17 @@ local PROMPT_PURCHASE_FINISHED_EVENT = "PromptPurchaseFinished"
 
 local marketplaceService = game:GetService("MarketplaceService")
 local dataStoreScope = "PlayerReceipts"
-local DataService
-
+local Data
 
 local function IncrementPurchase(player, productId)
 	productId = tostring(productId)
-	local productPurchases = DataService:Get(player, PRODUCT_PURCHASES_KEY)
-	if (not productPurchases) then
-		productPurchases = {}
-		DataService:Set(player, PRODUCT_PURCHASES_KEY, productPurchases)
-	end
-	local n = productPurchases[productId]
-	productPurchases[productId] = (n and (n + 1) or 1)
-	DataService:FlushKey(player, PRODUCT_PURCHASES_KEY)
+	local playerData = Data.ForPlayer(player)
+	return playerData:Get(PRODUCT_PURCHASES_KEY, {}):Then(function(productPurchases)
+		local n = productPurchases[productId]
+		productPurchases[productId] = (n and (n + 1) or 1)
+		playerData:MarkDirty(PRODUCT_PURCHASES_KEY)
+		return playerData:Save(PRODUCT_PURCHASES_KEY)
+	end)
 end
 
 
@@ -71,16 +69,27 @@ local function ProcessReceipt(receiptInfo)
 	local key = tostring(receiptInfo.PurchaseId)
 
 	-- Check if unique purchase was already completed:
-	local alreadyPurchased = DataService:GetCustom(dataStoreName, dataStoreScope, key)
+	local data = Data.new(dataStoreName, dataStoreScope)
+	local alreadyPurchasedSuccess, alreadyPurchased = data:Get(key):Await()
+	if (not alreadyPurchasedSuccess) then
+		return Enum.ProductPurchaseDecision.NotProcessedYet
+	end
 
 	if (not alreadyPurchased) then
 		-- Mark as purchased and save immediately:
-		DataService:SetCustom(dataStoreName, dataStoreScope, key, true)
-		DataService:FlushCustom(dataStoreName, dataStoreScope, key)
+		local success = data:Set(key, true):Then(function()
+			return data:Save(key)
+		end):Await()
+		if (not success) then
+			return Enum.ProductPurchaseDecision.NotProcessedYet
+		end
 	end
 
 	if (player) then
-		IncrementPurchase(player, receiptInfo.ProductId)
+		local incSuccess = IncrementPurchase(player, receiptInfo.ProductId):Await()
+		if (not incSuccess) then
+			return Enum.ProductPurchaseDecision.NotProcessedYet
+		end
 		StoreService:FireEvent(PROMPT_PURCHASE_FINISHED_EVENT, player, receiptInfo)
 		StoreService:FireClientEvent(PROMPT_PURCHASE_FINISHED_EVENT, player, receiptInfo)
 	end
@@ -91,8 +100,8 @@ end
 
 
 function StoreService:HasPurchased(player, productId)
-	local productPurchases = DataService:Get(player, PRODUCT_PURCHASES_KEY)
-	return (productPurchases and productPurchases[tostring(productId)] ~= nil)
+	local success, productPurchases = Data.ForPlayer(player):Get(PRODUCT_PURCHASES_KEY, {}):Await()
+	return (success and productPurchases[tostring(productId)] ~= nil)
 end
 
 
@@ -107,8 +116,8 @@ end
 -- Get the number of productId's purchased:
 function StoreService:GetNumberPurchased(player, productId)
 	local n = 0
-	local productPurchases = DataService:Get(player, PRODUCT_PURCHASES_KEY)
-	if (productPurchases) then
+	local success, productPurchases = Data.ForPlayer(player):Get(PRODUCT_PURCHASES_KEY, {}):Await()
+	if (success) then
 		n = (productPurchases[tostring(productId)] or 0)
 	end
 	return n
@@ -134,7 +143,7 @@ end
 
 function StoreService:Start()
 	-- Init dependencies
-	DataService = self:Require("DataService")
+	Data = self:Require("Data")
 
 	-- Register MarketplaceService callback
 	marketplaceService.ProcessReceipt = ProcessReceipt
