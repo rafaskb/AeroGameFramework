@@ -257,12 +257,7 @@ end
 ---@return number
 ---
 function TableUtil:IndexOf(tbl, item)
-    for i = 1, #tbl do
-        if (tbl[i] == item) then
-            return i
-        end
-    end
-    return nil
+    return table.find(tbl, item)
 end
 
 ---
