@@ -192,6 +192,14 @@ local function Log(...)
     print("Data ->", ...)
 end
 
+local function HeartbeatSpawn(callback, ...)
+    local hb
+    local args = {...}
+    hb = game:GetService("RunService").Heartbeat:Connect(function()
+        hb:Disconnect()
+        callback(unpack(args))
+    end)
+end
 
 -- Check if key matches DataStore criteria:
 local function CheckKey(key)
@@ -689,7 +697,7 @@ function Data:Start()
         local bindable = Instance.new("BindableEvent")
         local numCompleted = 0
         for _, func in pairs(self._onCloseHandlers) do
-            spawn(function()
+            HeartbeatSpawn(function()
                 local success, err = pcall(func)
                 if (not success) then
                     warn("Data BindToClose function failed: " .. tostring(err))
@@ -756,7 +764,7 @@ function Data:Start()
     end)
 
     -- Auto-save cycle:
-    spawn(function()
+    HeartbeatSpawn(function()
         while (true) do
             wait(self.AutoSaveInterval)
             if (gameClosing) then
