@@ -61,6 +61,14 @@ function MathUtil:NextInteger(min, max)
 end
 
 ---
+---Returns a pseudorandom boolean.
+---@return boolean
+---
+function MathUtil:NextBoolean()
+    return math.random() >= 0.5
+end
+
+---
 ---Returns a triangularly distributed random number between "min" and "max", where values close to the "around" one
 ---are more likely to be chosen. In the event that "around" is not between the given boundaries, the result is clamped.
 ---@param min number The lower limit.
