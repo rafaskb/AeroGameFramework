@@ -22,6 +22,10 @@ local remoteServices = Instance.new("Folder")
 remoteServices.Name = "AeroRemoteServices"
 remoteServices.Parent = game:GetService("ReplicatedStorage")
 
+local remoteServicesLoadedValue = Instance.new("BoolValue") ---@type BoolValue
+remoteServicesLoadedValue.Name = "AeroLoadedValue"
+remoteServicesLoadedValue.Parent = remoteServices
+
 ---
 ---Requires a dependency by its name. It can be a module, script, service, all kinds of dependencies will be checked.
 ---@param name string
@@ -360,6 +364,9 @@ local function InitServices()
         -- Mark module as init
         data.Init = true
     end
+
+    -- Mark remote services as loaded
+    remoteServicesLoadedValue.Value = true
 
     -- Start services:
     for name, data in pairs(services) do

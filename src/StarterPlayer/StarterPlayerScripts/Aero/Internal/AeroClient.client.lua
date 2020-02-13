@@ -295,7 +295,17 @@ local function LoadService(serviceFolder)
 end
 
 local function LoadServices()
+    -- Get remote services
     local remoteServices = game:GetService("ReplicatedStorage"):WaitForChild("AeroRemoteServices")
+
+    -- Wait until it's loaded
+    local loadedValue = remoteServices:WaitForChild("AeroLoadedValue") ---@type BoolValue
+    while not loadedValue.Value do
+        print("[AeroClient - LoadServices]", "Waiting for remote services to be loaded.")
+        wait(1)
+    end
+
+    -- Load services
     for _, serviceFolder in pairs(remoteServices:GetChildren()) do
         if (serviceFolder:IsA("Folder")) then
             LoadService(serviceFolder)
