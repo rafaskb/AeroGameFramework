@@ -100,26 +100,47 @@ function MathUtil:Lerp(from, to, progress)
 end
 
 ---
----Rounds a number according to the given bracket.
+---Basic round function
+---@param value number
+---
+local function round(value)
+    return math.floor(value + 0.5)
+end
+
+---
+---Rounds a number according to the desired amount of decimals.
 ---
 ---Examples:
----    Round(123.456789, 100)   -- 100
----    Round(123.456789, 10)    -- 120
----    Round(123.456789, 1)     -- 123
----    Round(123.456789, 0.1)   -- 123.5
----    Round(123.456789, 0.01)  -- 123.46
----    Round(123.456789, 0.001) -- 123.457
+--- - Round(184.123,  3) = 184.123
+--- - Round(184.123,  2) = 184.12
+--- - Round(184.123,  1) = 184.1
+--- - Round(184.123,  0) = 184
+--- - Round(184.123, -1) = 190
+--- - Round(184.123, -2) = 200
 ---
----@param value number
----@param bracket number
----@return number
+---@param value number Value to be rounded.
+---@param decimals number Amount of wanted decimals, or negative values to round to the left. Defaults to 0.
 ---
-function MathUtil:Round(value, bracket)
-    bracket = bracket or 1
-    if bracket == 0 then
-        bracket = 1
+---@return number Rounded value
+---
+function MathUtil:Round(value, decimals)
+    -- Sanitize
+    value = value or 0
+    decimals = decimals or 0
+
+    -- Round value
+    local a = 10 ^ decimals
+    local result = round(value * a) / a
+
+    -- Strip unwanted decimals
+    local wereDecimalsRequested = decimals and decimals >= 1
+    local areDecimalsZero = (result % math.floor(result)) <= 0.01
+    if wereDecimalsRequested or areDecimalsZero then
+        result = round(result)
     end
-    return math.floor(value / bracket + 0.5) * bracket
+
+    -- Return result
+    return result
 end
 
 ---
