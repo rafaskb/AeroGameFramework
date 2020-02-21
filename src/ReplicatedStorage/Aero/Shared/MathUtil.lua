@@ -73,10 +73,13 @@ end
 ---are more likely to be chosen. In the event that "around" is not between the given boundaries, the result is clamped.
 ---@param min number The lower limit.
 ---@param max number The upper limit.
----@param around number The point around which the values are more likely.
+---@param around number The point around which the values are more likely. Defaults to the average between min and max.
 ---@return number
 ---
 function MathUtil:NextTriangular(min, max, around)
+    if not around then
+        around = (min + max) / 2
+    end
     local u = math.random()
     local d = max - min
     local r = 0
