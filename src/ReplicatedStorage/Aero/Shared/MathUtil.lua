@@ -77,9 +77,17 @@ end
 ---@return number
 ---
 function MathUtil:NextTriangular(min, max, around)
+    -- Sanitize
     if not around then
         around = (min + max) / 2
     end
+    if min > max then
+        local originalMin = min
+        local originalMax = max
+        min = originalMax
+        max = originalMin
+    end
+
     local u = math.random()
     local d = max - min
     local r = 0
