@@ -305,6 +305,9 @@ local function LoadServices()
         wait(1)
     end
 
+    -- Wait a few extra seconds for all remote connections to be replicated
+    wait(3)
+
     -- Load services
     for _, serviceFolder in pairs(remoteServices:GetChildren()) do
         if (serviceFolder:IsA("Folder")) then
