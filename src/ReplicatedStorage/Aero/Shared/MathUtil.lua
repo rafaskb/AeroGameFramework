@@ -155,6 +155,25 @@ function MathUtil:Round(value, decimals)
 end
 
 ---
+---Rounds a number keeping a certain amount of significant figures.
+---
+---Examples:
+--- - SignificantFigures(123.45,  5) = 123.45
+--- - SignificantFigures(123.45,  4) = 123.5
+--- - SignificantFigures(123.45,  3) = 123
+--- - SignificantFigures(123.45,  2) = 120
+--- - SignificantFigures(123.45,  1) = 100
+--- - SignificantFigures(123.45,  0) = 0.0
+---
+---@param value number Number to be rounded.
+---@param figures number Amount of significant figures to keep
+---
+function MathUtil:SignificantFigures(value, figures)
+    local x = figures - math.ceil(math.log10(math.abs(value)))
+    return math.floor(value * 10 ^ x + 0.5) / 10 ^ x
+end
+
+---
 ---Makes a weighted choice based on the given table (keys are entries, values are weights).
 ---@generic T
 ---@param t table<T,number>
