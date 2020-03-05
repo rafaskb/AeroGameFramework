@@ -65,7 +65,7 @@ end
 ---
 ---Formats a large number, abbreviating them as much as possible.
 ---
----Return values such as 12.5k, 1.9M, and 43 Octodecillion. Doesn't handle plural suffixes.
+---Return values such as 12.5k, 1.9M, and 43 Octodecillions.
 ---
 ---@param value number Value to be rounded.
 ---@param decimals number Amount of wanted decimals, or negative values to round to the left. Defaults to 1.
@@ -92,7 +92,8 @@ function StringUtil:FormatLargeNumber(value, decimals, useSymbols)
     -- Format value
     local rounded = MathUtil:Round(value / mapEntry.Value, decimals)
     local suffix = (useSymbols and mapEntry.Symbol) or (mapEntry.Name and (" " .. mapEntry.Name)) or ""
-    return tostring(rounded) .. suffix
+    local plural = ((not useSymbols or not mapEntry.Symbol) and value ~= 1) and "s" or ""
+    return tostring(rounded) .. suffix .. plural
 end
 
 ---
