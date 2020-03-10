@@ -71,7 +71,7 @@ end
 ---@param decimals number Amount of wanted decimals, or negative values to round to the left. Defaults to 1.
 ---@param useSymbols boolean Whether or not the function should try to use symbols when abbreviating the value (e.g. 1.2k instead of 1.2 Thousand). Defaults to false.
 ---
----@return string Formatted value
+---@return string, number Formatted number, and the rounded number
 ---
 function StringUtil:FormatLargeNumber(value, decimals, useSymbols)
     -- Sanitize
@@ -92,7 +92,8 @@ function StringUtil:FormatLargeNumber(value, decimals, useSymbols)
     -- Format value
     local rounded = MathUtil:Round(value / mapEntry.Value, decimals)
     local suffix = (useSymbols and mapEntry.Symbol) or (mapEntry.Name and (" " .. mapEntry.Name)) or ""
-    return tostring(rounded) .. suffix
+    local formatted = tostring(rounded) .. suffix
+    return formatted, rounded
 end
 
 ---
