@@ -146,7 +146,7 @@ function MathUtil:Round(value, decimals)
     -- Strip unwanted decimals
     local wereDecimalsRequested = decimals and decimals >= 1
     local areDecimalsZero = (result % math.floor(result)) <= 0.01
-    if wereDecimalsRequested or areDecimalsZero then
+    if not wereDecimalsRequested or areDecimalsZero then
         result = round(result)
     end
 
