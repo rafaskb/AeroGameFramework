@@ -470,6 +470,9 @@ local function Init()
     InitServices()
     InitScripts()
 
+    -- Give scripts and services time to start and register everything
+    wait(5)
+
     -- Set framework as loaded
     AeroServer.Loaded = true
 end
