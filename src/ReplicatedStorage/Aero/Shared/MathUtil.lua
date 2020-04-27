@@ -4,6 +4,9 @@
 ---
 local MathUtil = {}
 
+local DEGREES_TO_RADIANS = 0.01745329252
+local RADIANS_TO_DEGREES = 57.295779513
+
 ---
 ---Linearly normalizes value from a range. Range must not be empty. This is the inverse of lerp.
 ---Example: function(20, 10, 30) returns 0.5.
@@ -196,6 +199,25 @@ function MathUtil:WeightedChoice(t)
         rnd = rnd - v
     end
     return last
+end
+
+
+---
+---Converts degrees to radians.
+---@param degrees number
+---@return number radians
+---
+function MathUtil:DegreesToRadians(degrees)
+    return (degrees or 0) * DEGREES_TO_RADIANS
+end
+
+---
+---Converts radians to degrees.
+---@param radians number
+---@return number degrees
+---
+function MathUtil:RadiansDegrees(radians)
+    return (radians or 0) * DEGREES_TO_RADIANS
 end
 
 return MathUtil
