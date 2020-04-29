@@ -201,7 +201,6 @@ function MathUtil:WeightedChoice(t)
     return last
 end
 
-
 ---
 ---Converts degrees to radians.
 ---@param degrees number
@@ -216,8 +215,8 @@ end
 ---@param radians number
 ---@return number degrees
 ---
-function MathUtil:RadiansDegrees(radians)
-    return (radians or 0) * DEGREES_TO_RADIANS
+function MathUtil:RadiansToDegrees(radians)
+    return (radians or 0) * RADIANS_TO_DEGREES
 end
 
 return MathUtil
