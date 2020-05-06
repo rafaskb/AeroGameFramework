@@ -51,6 +51,15 @@ function MathUtil:NextNumber(min, max)
 end
 
 ---
+---Returns a boolean indicating if the given chance was met when compared with a random value. Chance must be between 0 and 1.
+---@param chance number Number between 0 and 1
+---@return boolean
+---
+function MathUtil:NextChance(chance)
+    return math.random() <= (chance or 0)
+end
+
+---
 ---Returns a pseudorandom integer uniformly distributed over [min, max].
 ---@param min number
 ---@param max number
