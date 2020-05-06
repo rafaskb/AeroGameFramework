@@ -41,7 +41,7 @@ function MathUtil:Map(value, inRangeStart, inRangeEnd, outRangeStart, outRangeEn
 end
 
 ---
----Returns a pseudorandom integer uniformly distributed over [min, max].
+---Returns a pseudorandom float uniformly distributed over [min, max].
 ---@param min number
 ---@param max number
 ---@return number
