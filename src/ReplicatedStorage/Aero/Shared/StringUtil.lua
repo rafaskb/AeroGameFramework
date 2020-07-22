@@ -11,7 +11,7 @@ local MAX_TUPLE = 7997
 
 ---Map of large numbers, and ways to abbreviate them.
 local LARGE_NUMBER_MAP = {
-    { Value = 1E00, Symbol = nil, Name = nil };
+    { Value = 1E00, Symbol = nil, Name = "Coin" };
     { Value = 1E03, Symbol = "k", Name = "Thousand" };
     { Value = 1E06, Symbol = "M", Name = "Million" };
     { Value = 1E09, Symbol = "B", Name = "Billion" };
@@ -70,14 +70,16 @@ end
 ---@param value number Value to be rounded.
 ---@param decimals number Amount of wanted decimals, or negative values to round to the left. Defaults to 1.
 ---@param useSymbols boolean Whether or not the function should try to use symbols when abbreviating the value (e.g. 1.2k instead of 1.2 Thousand). Defaults to false.
+---@param appendCoins boolean Whether or not to append "Coin" or "Coins" when appropriate. Defaults to false.
 ---
 ---@return string, number Formatted number, and the rounded number
 ---
-function StringUtil:FormatLargeNumber(value, decimals, useSymbols)
+function StringUtil:FormatLargeNumber(value, decimals, useSymbols, appendCoins)
     -- Sanitize
     value = value or 0
     decimals = decimals or 1
     useSymbols = useSymbols and true or false
+    appendCoins = appendCoins and true or false
 
     -- Find closest entry in the map
     local mapEntry = LARGE_NUMBER_MAP[1]
@@ -92,6 +94,12 @@ function StringUtil:FormatLargeNumber(value, decimals, useSymbols)
     -- Format value
     local rounded = MathUtil:Round(value / mapEntry.Value, decimals)
     local suffix = (useSymbols and mapEntry.Symbol) or (mapEntry.Name and (" " .. mapEntry.Name)) or ""
+    if (value > 1) and (value < 1000) then
+        suffix = suffix .. "s"
+    end
+    if appendCoins and not useSymbols and rounded >= 1000 then
+        suffix = suffix .. " Coins"
+    end
     local formatted = tostring(rounded) .. suffix
     return formatted, rounded
 end
