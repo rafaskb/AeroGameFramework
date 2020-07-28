@@ -97,7 +97,7 @@ function StringUtil:FormatLargeNumber(value, decimals, useSymbols, appendCoins)
     if (value > 1) and (value < 1000) then
         suffix = suffix .. "s"
     end
-    if appendCoins and not useSymbols and rounded >= 1000 then
+    if appendCoins and not useSymbols and value >= 1000 then
         suffix = suffix .. " Coins"
     end
     local formatted = tostring(rounded) .. suffix
