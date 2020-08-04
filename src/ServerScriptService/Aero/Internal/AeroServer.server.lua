@@ -176,9 +176,12 @@ end
 
 ---
 ---Runs a function asynchronously via coroutines.
+---
 ---@param func function Function to be executed asynchronously.
 ---@param module table Aero module passed as self to the given function. Optional.
 ---@param name string Name of the function for debug purposes.Optional.
+---
+---@overload fun(func:function):void
 ---
 function AeroServer:RunAsync(func, module, name)
     name = name or "Unknown Source"
@@ -189,6 +192,31 @@ function AeroServer:RunAsync(func, module, name)
         local traceback = debug.traceback(thread, tracebackMsg, 2)
         warn(traceback)
     end
+end
+
+---
+---Loops a function asynchronously via coroutines.
+---
+---@param func function Function to be executed asynchronously.
+---@param interval number Interval in seconds for the function to keep running.
+---@param module table Aero module passed as self to the given function. Optional.
+---@param name string Name of the function for debug purposes. Optional.
+---
+---@overload fun(func:function, interval:number):void
+---
+function AeroServer:RunAsyncLoop(func, interval, module, name)
+    name = name or "Unknown Source"
+    interval = interval or 0
+
+    local innerName = name and " (Loop's inner function)"
+    local rootFunction = function()
+        while true do
+            self:RunAsync(func, module, innerName)
+            wait(interval)
+        end
+    end
+
+    self:RunAsync(rootFunction, module, name)
 end
 
 ---
