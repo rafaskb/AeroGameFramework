@@ -208,7 +208,7 @@ function AeroServer:RunAsyncLoop(func, interval, module, name)
     name = name or "Unknown Source"
     interval = interval or 0
 
-    local innerName = name and " (Loop's inner function)"
+    local innerName = name .. " (Loop's inner function)"
     local rootFunction = function()
         while true do
             self:RunAsync(func, module, innerName)
