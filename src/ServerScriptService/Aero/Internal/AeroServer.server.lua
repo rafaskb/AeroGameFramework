@@ -349,7 +349,7 @@ local function InitServices()
     -- Collect services
     local services = {}
     for name, data in pairs(required) do
-        if data.Type == "Service" then
+        if data.Type == "Service" and not data.Init then
             services[name] = data
         end
     end
@@ -409,7 +409,7 @@ local function InitScripts()
     -- Collect scripts
     local scripts = {}
     for name, data in pairs(required) do
-        if data.Type == "Script" then
+        if data.Type == "Script" and not data.Init then
             scripts[name] = data
         end
     end

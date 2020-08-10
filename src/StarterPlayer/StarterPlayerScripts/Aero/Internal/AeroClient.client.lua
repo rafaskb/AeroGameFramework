@@ -348,7 +348,7 @@ local function InitControllers()
     -- Collect controllers
     local controllers = {}
     for name, data in pairs(required) do
-        if data.Type == "Controller" then
+        if data.Type == "Controller" and not data.Init then
             controllers[name] = data
         end
     end
@@ -380,7 +380,7 @@ local function InitScripts()
     -- Collect scripts
     local scripts = {}
     for name, data in pairs(required) do
-        if data.Type == "Script" then
+        if data.Type == "Script" and not data.Init then
             scripts[name] = data
         end
     end
