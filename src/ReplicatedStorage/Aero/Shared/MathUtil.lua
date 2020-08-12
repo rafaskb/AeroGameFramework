@@ -207,4 +207,52 @@ function MathUtil:WeightedChoice(t)
     return last
 end
 
+---
+---Encodes any large number supported by Lua into a database format that's smaller than 64 bits. 4 significant figures are preserved, while the others are lost.
+---
+---@param number number Must be greater than zero.
+---@return number Encoded number
+---
+function MathUtil:EncodeLargeNumber(number)
+    -- FORMAT = HEEESSSS
+    --      H = Fixed "1" header
+    --      E = 3 digits exponent
+    --      C = 4 significant digits
+
+    -- Sanitize
+    number = math.max(1, number or 1)
+
+    -- Encode
+    local exponent = math.floor(math.log10(number))
+    local significant = number / math.pow(10, exponent)
+    local h = 10000000
+    local eee = exponent * 10000
+    local ssss = math.floor(MathUtil:Round(significant, 3) * 1000)
+    local encoded = h + eee + ssss
+    return encoded
+end
+
+---
+---Decodes any large number supported by Lua from a database format that's smaller than 64 bits. 4 significant figures are preserved, while the others are lost.
+---
+---@param number number
+---@return number Decoded number
+---
+function MathUtil:DecodeLargeNumber(number)
+    -- FORMAT = HEEESSSS
+    --      H = Fixed "1" header
+    --      E = 3 digits exponent
+    --      C = 4 significant digits
+
+    -- Make sure number is greater than our header
+    local h = 10000000
+    number = math.max(h, number)
+
+    -- Decode
+    local exponent = math.floor((number - 10000000) / 10000)
+    local significant = (number - (math.floor(number / 10000) * 10000)) / 1000
+    local decoded = significant * math.pow(10, exponent)
+    return decoded
+end
+
 return MathUtil
