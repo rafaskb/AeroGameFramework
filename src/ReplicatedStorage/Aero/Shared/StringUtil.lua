@@ -9,47 +9,6 @@ local StringUtil = {}
 --- Value used in string <---> byte conversion
 local MAX_TUPLE = 7997
 
----Map of large numbers, and ways to abbreviate them.
-local LARGE_NUMBER_MAP = {
-    { Value = 1E00, Symbol = nil, Name = "Coin" };
-    { Value = 1E03, Symbol = "k", Name = "Thousand" };
-    { Value = 1E06, Symbol = "M", Name = "Million" };
-    { Value = 1E09, Symbol = "B", Name = "Billion" };
-    { Value = 1E12, Symbol = "T", Name = "Trillion" };
-    { Value = 1E15, Symbol = "q", Name = "Quadrillion" };
-    { Value = 1E18, Symbol = "Q", Name = "Quintillion" };
-    { Value = 1E21, Symbol = "s", Name = "Sextillion" };
-    { Value = 1E24, Symbol = "S", Name = "Septillion" };
-    { Value = 1E27, Symbol = "O", Name = "Octillion" };
-    { Value = 1E30, Symbol = "N", Name = "Nonillion" };
-    { Value = 1E33, Symbol = "d", Name = "Decillion" };
-    { Value = 1E36, Symbol = "U", Name = "Undecillion" };
-    { Value = 1E39, Symbol = "D", Name = "Duodecillion" };
-    { Value = 1E42, Symbol = nil, Name = "Tredecillion" };
-    { Value = 1E45, Symbol = nil, Name = "Quattuordecillion" };
-    { Value = 1E48, Symbol = nil, Name = "Quinquadecillion" };
-    { Value = 1E51, Symbol = nil, Name = "Sedecillion" };
-    { Value = 1E54, Symbol = nil, Name = "Septendecillion" };
-    { Value = 1E57, Symbol = nil, Name = "Octodecillion" };
-    { Value = 1E60, Symbol = nil, Name = "Novendecillion" };
-    { Value = 1E63, Symbol = nil, Name = "Vigintillion" };
-    { Value = 1E66, Symbol = nil, Name = "Unvigintillion" };
-    { Value = 1E69, Symbol = nil, Name = "Duovigintillion" };
-    { Value = 1E72, Symbol = nil, Name = "Tresvigintillion" };
-    { Value = 1E75, Symbol = nil, Name = "Quattuorvigintillion" };
-    { Value = 1E78, Symbol = nil, Name = "Quinquavigintillion" };
-    { Value = 1E81, Symbol = nil, Name = "Sesvigintillion" };
-    { Value = 1E84, Symbol = nil, Name = "Septemvigintillion" };
-    { Value = 1E87, Symbol = nil, Name = "Octovigintillion" };
-    { Value = 1E90, Symbol = nil, Name = "Novemvigintillion" };
-    { Value = 1E93, Symbol = nil, Name = "Trigintillion" };
-    { Value = 1E96, Symbol = nil, Name = "Untrigintillion" };
-    { Value = 1E99, Symbol = nil, Name = "Duotrigintillion" };
-}
-
--- Dependencies
-local MathUtil ---@type MathUtil
-
 ---
 ---Formats a number with commas and dots. (e.g. 1234567 -> 1,234,567)
 ---
@@ -64,48 +23,6 @@ function StringUtil:CommaValue(n)
     -- credit http://richard.warburton.it
     local left, num, right = string.match(n, '^([^%d]*%d)(%d*)(.-)$')
     return left .. (num:reverse():gsub('(%d%d%d)', '%1,'):reverse()) .. right
-end
-
----
----Formats a large number, abbreviating them as much as possible.
----
----Return values such as 12.5k, 1.9M, and 43 Octodecillion. Doesn't handle plural suffixes.
----
----@param value number Value to be rounded.
----@param decimals number Amount of wanted decimals, or negative values to round to the left. Defaults to 1.
----@param useSymbols boolean Whether or not the function should try to use symbols when abbreviating the value (e.g. 1.2k instead of 1.2 Thousand). Defaults to false.
----@param appendCoins boolean Whether or not to append "Coin" or "Coins" when appropriate. Defaults to false.
----
----@return string, number Formatted number, and the rounded number
----
-function StringUtil:FormatLargeNumber(value, decimals, useSymbols, appendCoins)
-    -- Sanitize
-    value = value or 0
-    decimals = decimals or 1
-    useSymbols = useSymbols and true or false
-    appendCoins = appendCoins and true or false
-
-    -- Find closest entry in the map
-    local mapEntry = LARGE_NUMBER_MAP[1]
-    for i = #LARGE_NUMBER_MAP, 1, -1 do
-        local e = LARGE_NUMBER_MAP[i]
-        if value >= e.Value then
-            mapEntry = e
-            break
-        end
-    end
-
-    -- Format value
-    local rounded = MathUtil:Round(value / mapEntry.Value, decimals)
-    local suffix = (useSymbols and mapEntry.Symbol) or (mapEntry.Name and (" " .. mapEntry.Name)) or ""
-    if (value > 1) and (value < 1000) then
-        suffix = suffix .. "s"
-    end
-    if appendCoins and not useSymbols and value >= 1000 then
-        suffix = suffix .. " Coins"
-    end
-    local formatted = tostring(rounded) .. suffix
-    return formatted, rounded
 end
 
 ---
@@ -405,7 +322,6 @@ end
 ---@private
 ---
 function StringUtil:Start()
-    MathUtil = self:Require("MathUtil")
 end
 
 return StringUtil
