@@ -4,6 +4,8 @@
 ---
 local MathUtil = {}
 
+local LARGE_NUMBER_ENCODING_VERSION = 1
+
 ---
 ---Linearly normalizes value from a range. Range must not be empty. This is the inverse of lerp.
 ---Example: function(20, 10, 30) returns 0.5.
@@ -208,51 +210,131 @@ function MathUtil:WeightedChoice(t)
 end
 
 ---
----Encodes any large number supported by Lua into a database format that's smaller than 64 bits. 4 significant figures are preserved, while the others are lost.
+---Encodes any large number supported by Lua into a database format that's smaller than 64 bits.
+---12 significant figures are preserved, while the others are lost.
 ---
----@param number number Must be greater than zero.
+---@param number number Any number supported by lua, both positive or negative.
+---@param printDebug boolean If true, the encoding process will be printed to the output.
 ---@return number Encoded number
+---@overload fun(number:number):number
 ---
-function MathUtil:EncodeLargeNumber(number)
-    -- FORMAT = HEEESSSS
-    --      H = Fixed "1" header
-    --      E = 3 digits exponent
-    --      C = 4 significant digits
+function MathUtil:EncodeLargeNumber(number, printDebug)
+    --[[
+        FORMAT = |V|SEEE|SMMMMMMMMMMMM|
+             V = Version
+             S = Sign (1 for positive, 0 for negative)
+             E = Exponent (3 digits)
+             M = Mantissa (12 digits)
+
+        EXAMPLE: 110731498700000000
+                 1----------------- => Version: 1
+                 -1---------------- => Exponent Sign: 1 (Exponent is positive)
+                 --073------------- => Exponent: 73
+                 -----1------------ => Mantissa Sign: 1 (Mantissa is positive)
+                 ------498700000000 => Mantissa: 498700000000 (Becomes 0.498700000000)
+    --]]
 
     -- Sanitize
-    number = math.max(1, number or 1)
+    number = number or 0
 
-    -- Encode
-    local exponent = math.floor(math.log10(number))
-    local significant = number / math.pow(10, exponent)
-    local h = 10000000
-    local eee = exponent * 10000
-    local ssss = math.floor(MathUtil:Round(significant, 3) * 1000)
-    local encoded = h + eee + ssss
-    return encoded
+    -- Extract mantissa and exponent
+    local mantissa, exponent = math.frexp(number) ---@type number
+    local encodedVersion = LARGE_NUMBER_ENCODING_VERSION * 1e17
+    local encodedExponent = math.floor(math.abs(exponent * 1e13))
+    local encodedMantissa = math.floor(math.abs(mantissa * 1e12))
+    local encodedExponentSign = exponent > 0 and 1e16 or 0
+    local encodedMantissaSign = mantissa > 0 and 1e12 or 0
+    local encodedNumber = encodedVersion + encodedExponentSign + encodedExponent + encodedMantissaSign + encodedMantissa
+
+    -- Debug printing
+    if printDebug then
+        print("\tEncoding number:", number)
+        print(("\t%f -> %s"):format(mantissa, "mantissa"))
+        print(("\t%f -> %s"):format(exponent, "exponent"))
+        print(("\t%018.0f -> %s"):format(encodedVersion, "encodedVersion"))
+        print(("\t%018.0f -> %s"):format(encodedExponentSign, "encodedExponentSign"))
+        print(("\t%018.0f -> %s"):format(encodedExponent, "encodedExponent"))
+        print(("\t%018.0f -> %s"):format(encodedMantissaSign, "encodedMantissaSign"))
+        print(("\t%018.0f -> %s"):format(encodedMantissa, "encodedMantissa"))
+        print(("\t%018.0f -> %s"):format(encodedNumber, "encodedNumber"))
+    end
+
+    return encodedNumber
 end
 
 ---
----Decodes any large number supported by Lua from a database format that's smaller than 64 bits. 4 significant figures are preserved, while the others are lost.
+---Decodes any large number supported by Lua from a database format that's smaller than 64 bits.
+---12 significant figures are preserved, while the others are lost.
 ---
 ---@param number number
+---@param printDebug boolean If true, the encoding process will be printed to the output.
 ---@return number Decoded number
 ---
-function MathUtil:DecodeLargeNumber(number)
-    -- FORMAT = HEEESSSS
-    --      H = Fixed "1" header
-    --      E = 3 digits exponent
-    --      C = 4 significant digits
+---@overload fun(number:number):number
+---
+function MathUtil:DecodeLargeNumber(number, printDebug)
+    -- Decode version from number (in case the number was encoded with a version -- Otherwise this will be zero)
+    local version = math.floor(number / 1e17)
 
-    -- Make sure number is greater than our header
-    local h = 10000000
-    number = math.max(h, number)
+    -- Current version
+    if version == LARGE_NUMBER_ENCODING_VERSION then
+        --[[
+            FORMAT = |V|SEEE|SMMMMMMMMMMMM|
+                 V = Version
+                 S = Sign (1 for positive, 0 for negative)
+                 E = Exponent (3 digits)
+                 M = Mantissa (12 digits)
+        --]]
 
-    -- Decode
-    local exponent = math.floor((number - 10000000) / 10000)
-    local significant = (number - (math.floor(number / 10000) * 10000)) / 1000
-    local decoded = significant * math.pow(10, exponent)
-    return decoded
+        local exponentSign = math.floor((number / 1e16) % 1e1) == 1 and 1 or -1
+        local exponent = math.floor((number / 1e13) % 1e3) * exponentSign
+        local mantissaSign = math.floor((number / 1e12) % 1e1) == 1 and 1 or -1
+        local mantissa = ((number % 1e12) / 1e12) * mantissaSign
+        local decodedNumber = math.ldexp(mantissa, exponent)
+
+        -- Debug printing
+        if printDebug then
+            print(("\tDecoding number: %018.0f"):format(number))
+            print(("\t%f -> %s"):format(version, "version"))
+            print(("\t%f -> %s"):format(exponentSign, "exponentSign"))
+            print(("\t%f -> %s"):format(exponent, "exponent"))
+            print(("\t%f -> %s"):format(mantissaSign, "mantissaSign"))
+            print(("\t%f -> %s"):format(mantissa, "mantissa"))
+            print(("\t%f -> %s"):format(decodedNumber, "decodedNumber"))
+        end
+
+        return decodedNumber
+    end
+
+    -- Version 0 (before versioning was implemented)
+    if version == 0 then
+        --[[
+            FORMAT = |H|EEE|SSSS|
+                 H = Fixed "1" header
+                 E = 3 digits exponent
+                 C = 4 significant digits
+        --]]
+
+        -- Make sure number is greater than our header
+        local h = 10000000
+        number = math.max(h, number)
+
+        -- Decode
+        local exponent = math.floor((number - 10000000) / 10000)
+        local significant = (number - (math.floor(number / 10000) * 10000)) / 1000
+        local decoded = significant * math.pow(10, exponent)
+
+        -- Debug printing
+        if printDebug then
+            print(("\tDecoding number: %018.0f"):format(number))
+            print(("\t%f -> %s"):format(version, "version"))
+            print(("\t%f -> %s"):format(exponent, "exponent"))
+            print(("\t%f -> %s"):format(significant, "significant"))
+            print(("\t%f -> %s"):format(decoded, "decoded"))
+        end
+
+        return decoded
+    end
 end
 
 return MathUtil
