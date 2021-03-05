@@ -10,6 +10,9 @@ local AeroClient = {
     Player = game:GetService("Players").LocalPlayer;
 }
 
+local DEPENDENCY_MAX_RETRY_ATTEMPTS = 20
+local DEPENDENCY_RETRY_TIME = 0.5
+
 local mt = { __index = AeroClient }
 
 local controllersFolders = {}
@@ -17,6 +20,7 @@ local modulesFolders = {}
 local scriptsFolders = {}
 local sharedFolders = {}
 local required = {}
+local retryAttemptsByName = {}
 
 local ParamUtil ---@type ParamUtil
 local Event ---@type Event
@@ -29,8 +33,20 @@ local Event ---@type Event
 function AeroClient:Require(name)
     local result = required[name]
 
+    -- If module wasn't found and Aero is still loading, try again later
+    if not result and not self.Loaded then
+        local retryAttempts = (retryAttemptsByName[name] or 0) + 1
+        retryAttemptsByName[name] = retryAttempts
+        if retryAttempts <= DEPENDENCY_MAX_RETRY_ATTEMPTS then
+            print(("[AeroClient:Require] Required module of name \"%s\" isn't registered, and Aero itself is still loading. Trying again soon..."):format(name))
+            wait(DEPENDENCY_RETRY_TIME)
+            return self:Require(name)
+        end
+    end
+
     -- Error - Module not found
     if not result then
+        retryAttemptsByName[name] = nil
         error("Failed to require dependency called \"" .. tostring(name) .. "\".", 2)
     end
 
@@ -44,6 +60,9 @@ function AeroClient:Require(name)
             error("Failed to require dependency called \"" .. tostring(name) .. "\": " .. tostring(err), 2)
         end
     end
+
+    -- Clean up retry attempts
+    retryAttemptsByName[name] = nil
 
     -- Return module
     return result.Module
@@ -244,39 +263,41 @@ local function RegisterDependencies(instance, moduleType)
         end
     end
 
-    -- Register script
+    -- Register script asynchronously
     if isScript then
+        AeroClient:RunAsync(function()
 
-        -- Error - There's already a module registered with that name
-        local name = instance.Name
-        if required[name] then
-            warn("[AeroClient] There is already a module registered with the same name: " .. tostring(name))
-            return
-        end
-
-        -- Require and wrap script
-        local status, requiredScript = pcall(function()
-            local obj = require(instance)
-            if (type(obj) == "table") then
-                AeroClient:WrapModule(obj, true)
-                return obj
+            -- Error - There's already a module registered with that name
+            local name = instance.Name
+            if required[name] then
+                warn("[AeroClient] There is already a module registered with the same name: " .. tostring(name))
+                return
             end
-            return obj
+
+            -- Require and wrap script
+            local status, requiredScript = pcall(function()
+                local obj = require(instance)
+                if (type(obj) == "table") then
+                    AeroClient:WrapModule(obj, true)
+                    return obj
+                end
+                return obj
+            end)
+
+            -- Error - Failed to load dependency
+            if not status then
+                local err = tostring(requiredScript)
+                warn("[AeroClient] Failed to register dependency: " .. tostring(instance:GetFullName() .. ". Error: " .. err))
+                return
+            end
+
+            -- Register
+            required[name] = {
+                Module = requiredScript;
+                Type = moduleType;
+                Init = false;
+            }
         end)
-
-        -- Error - Failed to load dependency
-        if not status then
-            local err = tostring(requiredScript)
-            warn("[AeroClient] Failed to register dependency: " .. tostring(instance:GetFullName() .. ". Error: " .. err))
-            return
-        end
-
-        -- Register
-        required[name] = {
-            Module = requiredScript;
-            Type = moduleType;
-            Init = false;
-        }
     end
 end
 
@@ -467,6 +488,20 @@ local function Init()
 
     -- Load server-side services:
     LoadServices()
+
+    -- Wait for dependencies to be registered
+    local function hasLoadingDependencies()
+        for _, time in pairs(retryAttemptsByName) do
+            if time <= DEPENDENCY_MAX_RETRY_ATTEMPTS then
+                return true
+            end
+        end
+        return false
+    end
+    while hasLoadingDependencies() do
+        print("[AeroClient:Init] Waiting for all dependencies to be registered...")
+        wait(DEPENDENCY_RETRY_TIME)
+    end
 
     -- Init controllers and scripts
     InitControllers()
