@@ -68,7 +68,7 @@ end
 ---@return number
 ---
 function MathUtil:NextInteger(min, max)
-    return self:Round(self:Lerp(min, max, math.random()), 1)
+    return math.floor(self:Lerp(min, max, math.random()) + 0.5)
 end
 
 ---
