@@ -72,6 +72,41 @@ function MathUtil:NextInteger(min, max)
 end
 
 ---
+---Returns the given number with a random variation applied, from a range of -1 to +1.
+---@param value number
+---@param variation number
+---@return number
+---
+function MathUtil:NextVariation(value, variation)
+    return value + variation * self:NextNumber(-1, 1)
+end
+
+---
+---Returns a Vector3 with random numbers in all axes.
+---@param min number
+---@param max number
+---@return Vector3
+---
+function MathUtil:NextVector3(min, max)
+    return Vector3.new(self:NextNumber(min, max), self:NextNumber(min, max), self:NextNumber(min, max))
+end
+
+---
+---Returns a random angle in degrees from 0 to 360.
+---@return number
+---
+function MathUtil:NextDegrees()
+    return self:NextNumber(0, 360)
+end
+
+---
+---Returns a random angle in radians from 0 to 2PI.
+---
+function MathUtil:NextRadians()
+    return self:NextNumber(0, math.pi * 2)
+end
+
+---
 ---Returns a pseudorandom boolean.
 ---@return boolean
 ---
