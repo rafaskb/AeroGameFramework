@@ -7,8 +7,8 @@ local AeroServer = {
     ClientEvents = {};
 }
 
-local DEPENDENCY_MAX_RETRY_ATTEMPTS = 20
 local DEPENDENCY_RETRY_TIME = 0.5
+local DEPENDENCY_MAX_RETRY_TIME = 10 -- Seconds
 
 local mt = { __index = AeroServer }
 
@@ -17,7 +17,7 @@ local modulesFolders = {}
 local scriptsFolders = {}
 local sharedFolders = {}
 local required = {}
-local retryAttemptsByName = {}
+local retryAttemptExaustionTimestamps = {} ---@type table<string,number>
 
 local ParamUtil  ---@type ParamUtil
 local Event      ---@type Event
@@ -40,9 +40,12 @@ function AeroServer:Require(name)
 
     -- If module wasn't found and Aero is still loading, try again later
     if not result and not self.Loaded then
-        local retryAttempts = (retryAttemptsByName[name] or 0) + 1
-        retryAttemptsByName[name] = retryAttempts
-        if retryAttempts <= DEPENDENCY_MAX_RETRY_ATTEMPTS then
+        local exaustionTimestamp = retryAttemptExaustionTimestamps[name]
+        if not exaustionTimestamp then
+            exaustionTimestamp = os.time() + DEPENDENCY_MAX_RETRY_TIME
+            retryAttemptExaustionTimestamps[name] = exaustionTimestamp
+        end
+        if os.time() < exaustionTimestamp then
             print(("[AeroServer:Require] Required module of name \"%s\" isn't registered, and Aero itself is still loading. Trying again soon..."):format(name))
             wait(DEPENDENCY_RETRY_TIME)
             return self:Require(name)
@@ -51,7 +54,7 @@ function AeroServer:Require(name)
 
     -- Error - Module not found
     if not result then
-        retryAttemptsByName[name] = nil
+        retryAttemptExaustionTimestamps[name] = nil
         error("Failed to require dependency called \"" .. tostring(name) .. "\".", 2)
     end
 
@@ -67,7 +70,7 @@ function AeroServer:Require(name)
     end
 
     -- Clean up retry attempts
-    retryAttemptsByName[name] = nil
+    retryAttemptExaustionTimestamps[name] = nil
 
     -- Return module
     return result.Module
@@ -517,8 +520,8 @@ local function Init()
 
     -- Wait for dependencies to be registered
     local function hasLoadingDependencies()
-        for _, time in pairs(retryAttemptsByName) do
-            if time <= DEPENDENCY_MAX_RETRY_ATTEMPTS then
+        for _, exaustionTimestamp in pairs(retryAttemptExaustionTimestamps) do
+            if os.time() < exaustionTimestamp then
                 return true
             end
         end
